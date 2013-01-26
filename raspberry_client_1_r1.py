@@ -11,7 +11,18 @@ url = 'http://157.182.184.52/~student1/data/comFile.txt'
 # is allows a object to be used to talk to the arduino
 # this doesn't not take into acount the tty file changeing
 # name which sometimes happens
-ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+#ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+ser = serial.Serial('COM3', 115200, timeout=1)
+
+# The log file will record the average delay in milliseconds
+# between each recived command as well as the longest and shortest
+# intervals.
+logFile = open('log-PythonClient.txt', 'w')
+longestWebTime = 0
+webTime = 0
+countWeb = 0
+serialTime = 0
+countSerial = 0
 
 # The speed of the golf cart in units
 # It's positive if going forward and negative for backwards
@@ -28,9 +39,21 @@ command = []
 sequence = 0
 
 def pingServer():
+    global webTime
+    global longestWebTime
+    global countWeb
+    global logFile
+    curTime = time.time()
     responce = urllib.urlopen(url)
     bob = responce.read()
     bob = bob.split()
+    endTime = time.time()
+    webTime = webTime + (endTime - curTime)
+    if (endTime - curTime) > longestWebTime:
+        longestWebTime = endTime - curTime
+    countWeb = countWeb + 1
+    out = 'A {} was recevied at {!r}\n'.format(bob[0], endTime)
+    logFile.write(out)
     return bob
 
 def writeSerial(command):
@@ -39,6 +62,9 @@ def writeSerial(command):
     global accelMin
     global steerAngle
     global forward
+    global countSerial
+    global logFile
+    curTime = time.time()
     if command[1] == 'up':
         #if accel < 0:
         #    forward = True
@@ -51,6 +77,7 @@ def writeSerial(command):
         #if accel > 0 and not(forward):
         #    switchDirections()
         accelerate(1250)
+        logCom = 'up'
     elif command[1] == 'down':
         if accel == 0
             accel = -accelMin
@@ -58,14 +85,22 @@ def writeSerial(command):
         #if accel < 0 and forward:
         #   switchDirections()
         accelerate(-1250)
+        logCom = 'down'
     elif command[1] == 'left':
         steerAngle = steerAngle - 1;
         steering(steerAngle)
+        logCom = 'left'
     elif command[1] == 'right':
         steerAngle = steerAngle + 1;
         steering(steerAngle)
+        logCom = 'right'
     elif command[1] == 'stop':
         stop()
+        logCom = 'stop'
+    endTime = time.time()
+    serialTime = serialTime + (endTime - curTime)
+    countSerial = countSerial + 1
+    logFile.write('Wrote {} to the Arduin\n'.format(logCom))
 
 def accelerate(speed):
     ser.write("5, "+str(speed)+";")
@@ -105,6 +140,7 @@ def  poll():
     if command[0] > sequence:
         writeSerial(command)
         sequence = command[0]
+    time.sleep(0.1)
 
 while(1):
     poll()
