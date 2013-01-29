@@ -24,7 +24,6 @@
 #define ACCEL_MAX	2000
 #define SLAVE_SELECT    53
 
-#define RELAY_STEER     
 #define RELAY_ACCEL     32
 #define RELAY_POWER     31
 #define RELAY_RAM       33
@@ -36,11 +35,11 @@ Servo steer;
 Servo brake;
 
 int readSpeed;
-volatile double steeringAngle = 0.0;
+volatile double steeringAngle;
 volatile boolean inter_1_state;
 volatile boolean inter_2_state;
 volatile boolean inter_g_state;
-int steerSetTime;
+int steerSetAngle;
 boolean forwardDirection = true;
 volatile boolean brake_state = false;
 int brakeSetTime;
@@ -111,10 +110,9 @@ void attach_callbacks(messengerCallbackFunction* callbacks)
 
 void steerPulse()
 {
-  if(time >= steerSetTime)
+  if(steeringAngle >= steerSetAngle)
   {
     stopSteering();
-    steerSetTime = 0;
   }
   setTime();
 }
@@ -175,7 +173,8 @@ void Steering()
   cmdMessenger.sendCmd(kACK,"I got Steer");
   intbuf = buf & 0x7FFF;
   //intbuf = buf & 127255;      //B01111111111111111
-  steerSetTime = STEER_TIME + time;
+  //steerSetTime = STEER_TIME + time;
+  steerSetAngle = intbuf;
   
   if (steeringAngle > buf)
   {
@@ -190,7 +189,7 @@ void Steering()
     //moveSteering(true);
     cmdMessenger.sendCmd(kACK,"I got right");
   }
-  steeringAngle = intbuf;
+  //steeringAngle = intbuf;
 }
 
 /************************************************************/
@@ -340,6 +339,7 @@ void setup()
   attachInterrupt(STEER_INTER_2, steer_inter_2, CHANGE);
   attachInterrupt(STEER_INTER_G, steer_inter_180, RISING);
   steer.attach(STEER_PIN);
+  steeringAngle = 0.0;
   
   attachInterrupt(BRAKE_ON_PIN, brakeState, RISING);
   attachInterrupt(BRAKE_OFF_PIN, brakeState, RISING);
