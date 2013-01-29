@@ -7,6 +7,7 @@
 #define STEER_RUN 	2000
 #define STEER_LUN       1000
 #define STEER_TIME 	800
+#define STEER_UNIT      0.1
 #define STEER_INTER_1   2 //pin 21
 #define STEER_INTER_2   3 //pin 20
 #define STEER_INTER_G   4 //pin 19
@@ -35,7 +36,10 @@ Servo steer;
 Servo brake;
 
 int readSpeed;
-volatile int steeringAngle = 0;
+volatile double steeringAngle = 0.0;
+volatile boolean inter_1_state;
+volatile boolean inter_2_state;
+volatile boolean inter_g_state;
 int steerSetTime;
 boolean forwardDirection = true;
 volatile boolean brake_state = false;
@@ -115,24 +119,52 @@ void steerPulse()
   setTime();
 }
 
-//void moveSteering(bool right)
-//{
-//  if(right)
-//  {
-//    steer.writeMicroseconds(1100);
-//    cmdMessenger.sendCmd(kACK,"I send right");
-//  }
-//  else
-//  {
-//    steer.writeMicroseconds(1900);
-//    cmdMessenger.sendCmd(kACK,"I send left");
-//  }
-//}
-
 void stopSteering()
 {
   steer.writeMicroseconds(1500);
 }
+
+//steer_inter_1 is called when ever the opical encoder inits a interupt
+// that is defined in the Setup(). When the 1 wire wiggles steer_inter_1
+// checks the statis of the 2 wire to deturmine the direction the wheel is 
+// turning and sets steeringAngle plus or minus the STEER_UNIT accordingly
+void steer_inter_1()
+{
+  inter_1_state = !inter_1_state;
+  if (inter_2_state)
+  {
+    if(inter_1_state)
+      steeringAngle = steeringAngle - STEER_UNIT;
+    else
+      steeringAngle = steeringAngle + STEER_UNIT;
+  }
+  else
+  {
+    if(inter_1_state)
+      steeringAngle = steeringAngle + STEER_UNIT;
+    else
+      steeringAngle = steeringAngle - STEER_UNIT;
+  }    
+}   
+
+void steer_inter_2()
+{
+  inter_2_state = !inter_2_state;
+  if (inter_1_state)
+  {
+    if(inter_2_state)
+      steeringAngle = steeringAngle + STEER_UNIT;
+    else
+      steeringAngle = steeringAngle - STEER_UNIT;
+  }
+  else
+  {
+    if(inter_1_state)
+      steeringAngle = steeringAngle - STEER_UNIT;
+    else
+      steeringAngle = steeringAngle + STEER_UNIT;
+  }    
+}   
 
 void Steering()
 {
@@ -304,6 +336,9 @@ void setup()
   SPI.setBitOrder(MSBFIRST);
   SPI.begin();
 
+  attachInterrupt(STEER_INTER_1, steer_inter_1, CHANGE); 
+  attachInterrupt(STEER_INTER_2, steer_inter_2, CHANGE);
+  attachInterrupt(STEER_INTER_G, steer_inter_180, RISING);
   steer.attach(STEER_PIN);
   
   attachInterrupt(BRAKE_ON_PIN, brakeState, RISING);
