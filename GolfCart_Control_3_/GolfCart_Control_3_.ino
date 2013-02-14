@@ -7,7 +7,7 @@
 #define STEER_RUN 	2000
 #define STEER_LUN       1000
 #define STEER_TIME 	800
-#define STEER_UNIT      0.1
+#define STEER_UNIT      0.1 // the model# / 360
 #define STEER_INTER_1   2 //pin 21
 #define STEER_INTER_2   3 //pin 20
 #define STEER_INTER_G   4 //pin 19
@@ -128,7 +128,7 @@ void stopSteering()
 // turning and sets steeringAngle plus or minus the STEER_UNIT accordingly
 void steer_inter_1()
 {
-  inter_1_state = !inter_1_state;
+  inter_1_state = digitalRead(21);
   if (inter_2_state)
   {
     if(inter_1_state)
@@ -147,7 +147,7 @@ void steer_inter_1()
 
 void steer_inter_2()
 {
-  inter_2_state = !inter_2_state;
+  inter_2_state = digitalRead(20);
   if (inter_1_state)
   {
     if(inter_2_state)

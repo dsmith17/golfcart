@@ -6,6 +6,8 @@ import termios, fcntl, sys, os
 # The comFile.txt will be updated every time the user presses
 # a button on the web page this is the url to that file
 url = 'http://157.182.184.52/~student1/data/comFile.txt'
+postUrl = "http://157.182.184.52/~student1/control2.php"
+params = urllib.urlencode({'accel': 0, 'steer': 0, 'brake': True})
 
 # The serial library is a third party called pyserial
 # is allows a object to be used to talk to the arduino
@@ -30,10 +32,12 @@ countSerial = 0
 # has a set speed to increase for every unit
 accel = 0
 accelUnit = 100
-accelMin = 1000
+accelMin = 1150
+accelMax = 4000
 forward = True
 
 steerAngle = 0
+steerUnit = 10
 
 command = []
 sequence = 0
@@ -60,34 +64,30 @@ def writeSerial(command):
     global accel
     global accelUnit
     global accelMin
+    global accelMax
     global steerAngle
+    global steerUnit
     global forward
     global countSerial
     global logFile
     curTime = time.time()
     if command[1] == 'up':
-        #if accel < 0:
-        #    forward = True
-        #    switchDirections()
-        #accel = accel + accelUnit
-        #accelerate(accel)
-        if accel == 0
+        # Let the arduino handle the brake and switching directions
+        if accel < accelMin
             accel = accelMin
-        accel = accel + accelUnit
-        #if accel > 0 and not(forward):
-        #    switchDirections()
-        accelerate(1250)
+        else
+            accel = accel + accelUnit
+        accelerate(accel)
         logCom = 'up'
     elif command[1] == 'down':
-        if accel == 0
+        if accel > -accelMin
             accel = -accelMin
-        accel = accel - accelUnit
-        #if accel < 0 and forward:
-        #   switchDirections()
-        accelerate(-1250)
+        else
+            accel = accel - accelUnit
+        accelerate(accel)
         logCom = 'down'
     elif command[1] == 'left':
-        steerAngle = steerAngle - 1;
+        steerAngle = steerAngle - ;
         steering(steerAngle)
         logCom = 'left'
     elif command[1] == 'right':
@@ -101,6 +101,12 @@ def writeSerial(command):
     serialTime = serialTime + (endTime - curTime)
     countSerial = countSerial + 1
     logFile.write('Wrote {} to the Arduin\n'.format(logCom))
+
+def serialRead()
+    line = ser.readline()
+    args = line.split(' ')
+    params = urllib.urlencode({'accel': args[0],'steer': agrs[1],'brake': args[2]})
+    urllib.urlopen(responceUrl, params)
 
 def accelerate(speed):
     ser.write("5, "+str(speed)+";")
@@ -116,17 +122,6 @@ def stop():
     accel = 0
     print("Stop")
 
-#def switchDirections():
-#	global forward
-#	global accel
-##	accel = 0
-#	if forward:
-#		ser.write("7, 1;")
-#		forward = False
-#	else:
-#		ser.write("7, 0;")
-#		forward = True
-
 def resetArduino():
     ser.setDTR(0)
     ser.setDTR(1)
@@ -139,6 +134,7 @@ def  poll():
     #print(command[1])
     if command[0] > sequence:
         writeSerial(command)
+        serialRead()
         sequence = command[0]
     time.sleep(0.1)
 
