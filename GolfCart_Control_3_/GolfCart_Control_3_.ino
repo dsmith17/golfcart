@@ -7,16 +7,21 @@
 #define STEER_RUN 	2000
 #define STEER_LUN       1000
 #define STEER_TIME 	800
-#define STEER_UNIT      0.1 // the model# / 360
-#define STEER_INTER_1   2 //pin 21
-#define STEER_INTER_2   3 //pin 20
+#define STEER_UNIT      0.36 // the model#  360/1000
+#define STEER_INTER_1   4 //pin 21
+#define STEER_PIN_1     19
+#define STEER_INTER_2   5 //pin 20
+#define STEER_PIN_2     18
 #define STEER_INTER_G   4 //pin 19
 #define STEER_PIN	9
+#define STEER_ACTIVE    true
+#define DEGREE_PREC     5
+#define DEGREE_DELTA    10
 
 #define BRAKE_UNIT 	1800
 #define BRAKE_TIME 	500
-#define BRAKE_ON_PIN    0 //pin 2
-#define BRAKE_OFF_PIN   1 //pin 3
+#define BRAKE_ON_PIN    30 //pin 2
+#define BRAKE_OFF_PIN   31 //pin 3
 #define BRAKE_PIN	8
 
 #define ACCEL_UNIT 	100
@@ -48,6 +53,7 @@ int buf;
 int intbuf;
 int i = 0;
 int currentSpeed = 0;
+char buffer[6];
 
 
 // Mustnt conflict / collide with our message payload data. Fine if we use base64 library ^^ above
@@ -110,10 +116,42 @@ void attach_callbacks(messengerCallbackFunction* callbacks)
 
 void steerPulse()
 {
+#ifdef STEER_ACTIVE
+  if(steeringAngle >= (steerSetAngle - DEGREE_PREC/2) || steeringAngle <= (steerSetAngle + DEGREE_PREC/2)) 
+  {
+    stopSteering();
+  }
+  else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2) && (steeringAngle - steerSetAngle) < DEGREE_DELTA)
+  {
+    steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
+  }
+  else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2) && (steerSetAngle - steeringAngle) < DEGREE_DELTA)
+  {
+    steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
+  }
+  else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2))
+  {
+    steer.writeMicroseconds(STEER_RUN);
+  }
+  else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2))
+  {
+    steer.writeMicroseconds(STEER_LUN);
+  }
+#else
   if(steeringAngle >= steerSetAngle)
   {
     stopSteering();
   }
+#endif
+  //inter_1_state = digitalRead(18);
+  //inter_2_state = digitalRead(19);
+  //buffer[0] = '0'+digitalRead(30);
+  //buffer[1] = ' ';
+  //buffer[2] = '0'+digitalRead(31);
+  //buffer[3] = ' ';
+  //buffer[4] = '0'+digitalRead(32);
+  //buffer[5] = 0;
+  //cmdMessenger.sendCmd(kACK,buffer);
   setTime();
 }
 
@@ -128,7 +166,7 @@ void stopSteering()
 // turning and sets steeringAngle plus or minus the STEER_UNIT accordingly
 void steer_inter_1()
 {
-  inter_1_state = digitalRead(21);
+  inter_1_state = digitalRead(STEER_PIN_1);
   if (inter_2_state)
   {
     if(inter_1_state)
@@ -142,12 +180,14 @@ void steer_inter_1()
       steeringAngle = steeringAngle + STEER_UNIT;
     else
       steeringAngle = steeringAngle - STEER_UNIT;
-  }    
+  }
+ 
+//  cmdMessenger.sendCmd(kACK,);  
 }   
 
 void steer_inter_2()
 {
-  inter_2_state = digitalRead(20);
+  inter_2_state = digitalRead(STEER_PIN_2);
   if (inter_1_state)
   {
     if(inter_2_state)
@@ -161,7 +201,8 @@ void steer_inter_2()
       steeringAngle = steeringAngle - STEER_UNIT;
     else
       steeringAngle = steeringAngle + STEER_UNIT;
-  }    
+  }
+  //cmdMessenger.sendCmd(kACK,"The steer angle is: %d",steeringAngle);
 }   
 
 void Steering()
@@ -281,6 +322,10 @@ void stopAll()
     applyBrake();
 }
 
+//void brakePoll()
+//{
+  
+
 void brakeState()
 {
   brake_state = !brake_state;
@@ -299,9 +344,9 @@ void stopBrake()
 void applyBrake()
 {
   if(brake_state)
-    brake.write(1000);
-  else
     brake.write(2000);
+  else
+    brake.write(1000);
 }
 
 /************************************************************/
@@ -337,12 +382,13 @@ void setup()
 
   attachInterrupt(STEER_INTER_1, steer_inter_1, CHANGE); 
   attachInterrupt(STEER_INTER_2, steer_inter_2, CHANGE);
-  attachInterrupt(STEER_INTER_G, steer_inter_180, RISING);
+//  attachInterrupt(STEER_INTER_G, steer_inter_180, RISING);
   steer.attach(STEER_PIN);
   steeringAngle = 0.0;
   
-  attachInterrupt(BRAKE_ON_PIN, brakeState, RISING);
-  attachInterrupt(BRAKE_OFF_PIN, brakeState, RISING);
+  //attachInterrupt(BRAKE_ON_PIN, brakeState, RISING);
+  //attachInterrupt(BRAKE_OFF_PIN, brakeState, RISING);
+  
   brake.attach(BRAKE_PIN);
   
   steer.writeMicroseconds(1500);
@@ -359,13 +405,21 @@ void setup()
   digitalWrite(RELAY_POWER,LOW);
   //digitalWrite(RELAY_RAM,LOW);
   digitalWrite(RELAY_DIRECTION,HIGH);
+  
+//  applyBrake();
+//  delay(1000);
+//  stopBrake();
+//  brake_state = !brake_state;
+//  applyBrake();
+//  delay(1000);
+//  stopBrake();
 }
 
 void loop()
 {
   cmdMessenger.feedinSerialData();
   steerPulse();
-  brakePulse();
+//  brakePulse();
 }
 
 
