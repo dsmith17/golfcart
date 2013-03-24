@@ -53,8 +53,7 @@ int buf;
 int intbuf;
 int i = 0;
 int currentSpeed = 0;
-char buffer[6];
-
+char response_buff[50];
 
 // Mustnt conflict / collide with our message payload data. Fine if we use base64 library ^^ above
 char field_separator = ',';
@@ -63,29 +62,19 @@ CmdMessenger cmdMessenger = CmdMessenger(Serial, field_separator, command_separa
 
 enum
 {
-  kCOMM_ERROR    = 000, // Lets Arduino report serial port comm error back to the PC (only works for some comm errors)
-  kACK           = 001, // Arduino acknowledges cmd was received
-  kARDUINO_READY = 002, // After opening the comm port, send this cmd 02 from PC to check arduino is ready
-  kERR           = 003, // Arduino reports badly formatted cmd, or cmd not recognised
+  kCOMM_ERROR    = 0, // Lets Arduino report serial port comm error back to the PC (only works for some comm errors)
+  kACK           = 1, // Arduino acknowledges cmd was received
+  kARDUINO_READY = 2, // After opening the comm port, send this cmd 02 from PC to check arduino is ready
+  kERR           = 3, // Arduino reports badly formatted cmd, or cmd not recognised
 
   // Now we can define many more 'send' commands, coming from the arduino -> the PC, eg
-  // kICE_CREAM_READY,
-  // kICE_CREAM_PRICE,
+  kSTEERING      = 4,
+  kACCEL         = 5,
+  kSTOP          = 6,
+  kSTATUS        = 9,
   // For the above commands, we just call cmdMessenger.sendCmd() anywhere we want in our Arduino program.
 
   kSEND_CMDS_END, // Mustnt delete this line
-};
-
-// Commands we send from the PC and want to recieve on the Arduino.
-// We must define a callback function in our Arduino program for each entry in the list below vv.
-// They start at the address kSEND_CMDS_END defined ^^ above as 004
-messengerCallbackFunction messengerCallbacks[] = 
-{
-  Steering,     // 004 
-  Accelerate,  // 005
-  Stop,         // 006
-  //switchDirection, //007
-  NULL
 };
 
 void arduino_ready()
@@ -143,15 +132,6 @@ void steerPulse()
     stopSteering();
   }
 #endif
-  //inter_1_state = digitalRead(18);
-  //inter_2_state = digitalRead(19);
-  //buffer[0] = '0'+digitalRead(30);
-  //buffer[1] = ' ';
-  //buffer[2] = '0'+digitalRead(31);
-  //buffer[3] = ' ';
-  //buffer[4] = '0'+digitalRead(32);
-  //buffer[5] = 0;
-  //cmdMessenger.sendCmd(kACK,buffer);
   setTime();
 }
 
@@ -286,23 +266,31 @@ void stopAccel()
 
 void Accelerate()
 {
-  while( cmdMessenger.available())
-  {    
-    buf = cmdMessenger.readInt();
+  int seq, val;
+  
+  seq = cmdMessenger.readInt();
+  if (cmdMessenger.available())
+     val = cmdMessenger.readInt();
+  else
+  {
+    cmdMessenger.sendCmd(kACK, "Invalid command");
+    return;
   }
-  cmdMessenger.sendCmd(kACK,"I got Accel");
-  if(buf < 0 && forwardDirection == true)
+  
+  sprintf(response_buff, "%d,0;", seq);
+  cmdMessenger.sendCmd(kACCEL,response_buff);
+  if(val < 0 && forwardDirection == true)
   {
     switchDirection(false);
-    setAccel(-buf);
+    setAccel(-val);
   }
-  else if (buf > 0 && forwardDirection == false)
+  else if (val > 0 && forwardDirection == false)
   {
     switchDirection(true);
-    setAccel(buf);
+    setAccel(val);
   }
   else
-	setAccel(abs(buf));
+    setAccel(abs(val));
 }
 
 /************************************************************/
@@ -349,6 +337,29 @@ void applyBrake()
     brake.write(1000);
 }
 
+void Status()
+{
+  int seq;
+  int dir;
+  
+  if (cmdMessenger.available())
+     seq = cmdMessenger.readInt();
+  else
+  {
+    cmdMessenger.sendCmd(kACK, "Invalid command");
+    return;
+  }
+  
+  if (forwardDirection)
+     dir = 0;
+  else
+     dir = 1;
+     
+  sprintf(response_buff, "%d,%d,%d,%d,%d,%d,0", 
+         seq, steerSetAngle, currentSpeed, dir, brake_state, 0);
+  cmdMessenger.sendCmd(kSTATUS,response_buff);
+}
+
 /************************************************************/
 //Time fucntions 
 
@@ -367,7 +378,10 @@ void setup()
   cmdMessenger.print_LF_CR(); //more readable comment out for real
   cmdMessenger.attach(kARDUINO_READY, arduino_ready);
   cmdMessenger.attach(unknownCmd);
-  attach_callbacks(messengerCallbacks);
+  cmdMessenger.attach(kSTEERING, Steering);
+  cmdMessenger.attach(kACCEL,    Accelerate);
+  cmdMessenger.attach(kSTOP,     Stop);
+  cmdMessenger.attach(kSTATUS,   Status);
   arduino_ready();
   
   setTime();  

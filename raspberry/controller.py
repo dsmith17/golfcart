@@ -10,17 +10,19 @@ url = 'http://157.182.184.52/~agc/command.php'
 
 Commands = {"steer": "4", "speed" : "5", "brake" : "6",
             "dir" : "7", "steer mode" : "8"}
-
+ARDUINO_STATUS = 9
 ArduinoConnected = False
 GPSConnected = False
 
 # status variables
 Speed = 0
 Steer = 0
+Direction = 0
 Brake = 0
+Steer_Mode = 0
 
 Pings = 0
-
+Arduino_Sequence = 0
 # session used to communicate with server
 Session = requests.session()
 
@@ -83,11 +85,20 @@ def writeLog(mask, msg):
 
 def formatUrl():
     formattedUrl = url + '?speed='+str(Speed) + '&steer='+str(Steer)
+    if Direction :
+        formattedUrl += '&direction=BACK'
+    else :
+        formattedUrl += '&direction=FORWARD'
+        
     if Brake :
         formattedUrl += '&brake=ON'
     else :
         formattedUrl += '&brake=OFF'
 
+    if Steer_Mode :
+        formattedUrl += '&steermode=ACTIVE'
+    else :
+        formattedUrl += '&steermode=PASSIVE'
     return formattedUrl
 
 def is_int(val) :
@@ -233,42 +244,6 @@ def checkGPS():
 
         start = GPS_Buffer.find('$')
 
-def checkGPS_old():
-    global GPS
-    global GPSConnected
-    global GPS_Buffer
-
-    if not GPSConnected :
-        return
-    
-    buff = GPS.read(size=100)
-    if len(buff) == 0 :
-        return
-
-    GPS_Buffer = GPS_Buffer + buff
-    end_of_line = GPS_Buffer.rfind('\r');
-    if end_of_line == -1 :
-        return
-    start_of_line = GPS_Buffer.rfind('$', 0, end_of_line)
-    if start_of_line == -1 :
-        GPS_Buffer = GPS_Buffer[end_of_line:]
-        return
-    line = GPS_Buffer[start_of_line:end_of_line]
-    GPS_Buffer = GPS_Buffer[end_of_line:]
-
-    if len(line) < 5 :
-        return
-    if not GPS_valid_msg(line) :
-        writeLog(LOG_ERROR, 'GPS checksum error ' + line)
-        return
-
-    writeLog(LOG_GPS_RAW, line)
-    fields = line.split(',')
-    
-    try :
-        GPS_func[fields[0]](fields)
-    except KeyError as err :
-        writeLog(LOG_ERROR, 'unknown GPS command: '+line)
 
 timeLastPing = 0    
 def pingServer(sequence_only=False):
@@ -320,6 +295,16 @@ def pingServer(sequence_only=False):
     elif commandParts[1] == 'reset' :
         cmd_reset()
 
+timeLastStatus = 0    
+def checkArduinoStatus(sequence_only=False):
+    global timeLastStatus
+
+    # don't ping too often 
+    curTime = time.time()
+    if curTime - timeLastStatus < 1.1 :
+        return
+    get_arduino_status()
+    
 def arduino_resp() :
     line = Arduino.readline()
     #line.strip()
@@ -341,17 +326,39 @@ Steer_Step = 10
 Speed_Step = 1000
 def serial_cmd(cmd, param) :
     global Arduino
-    command = str(cmd) + ', ' + str(param) + ';'
+    global Arduino_Sequence
+
+    Arduino_Sequence = Arduino_Sequence + 1
+    command = str(cmd) + ', ' + str(Arduino_Sequence) + ', ' + str(param) + ';'
     Arduino.write(command)
     writeLog(LOG_SERIAL_OUT, 'Serial out: ' + command)
     line = arduino_resp()
     args = line.split(',')
-    if str(cmd) != args[0]:
-        writeLog(LOG_SERIAL_ERROR, "Serial Resp Mismatch: " + str(cmd) + " " + args[0])
+    if str(cmd) != args[0] or str(Arduino_Sequence) != args[1] :
+        writeLog(LOG_SERIAL_ERROR, "Serial Resp Mismatch: " + str(cmd) + " " + args[0] + " " + str(Arduino_Sequence) + " " + args[1])
+def get_arduino_status() :
+    global Arduino
+    global Arduino_Sequence
+    global Speed
+    global Steer
+    global Direction
+    global Brake
+    global Steer_Mode
+
+    Arduino_Sequence = Arduino_Sequence + 1
+    command = str(ARDUINO_STATUS) + ', ' + str(Arduino_Sequence) + ';'
+    Arduino.write(command)
+    writeLog(LOG_SERIAL_OUT, 'Serial out: ' + command)
+    line = arduino_resp()
+    args = line.split(',')
+    if str(ARDUINO_STATUS) != args[0] or str(Arduino_Sequence) != args[1] :
+        writeLog(LOG_SERIAL_ERROR, "Serial Resp Mismatch: " + str(cmd) + " " + args[0] + " " + str(Arduino_Sequence) + " " + args[1])
     else :
-        Steer_Pos = int(args[1])
-        Speed_Pos = int(args[2])
-        Brake_Pos = args[3]
+        Steer      = int(args[2])
+        Speed      = int(args[3])
+        Direction  = int(args[4])
+        Brake      = int(args[5])
+        Steer_Mode = int(args[6])
 
 def cmd_reset() :
     global Sequence
@@ -396,7 +403,8 @@ def execute(command) :
 Sequence = 0
 def  poll():
     pingServer()
-    checkGPS()    
+    checkGPS()
+    checkArduinoStatus()
     time.sleep(0.55)
 
 # Ping the server once to get current Sequence
