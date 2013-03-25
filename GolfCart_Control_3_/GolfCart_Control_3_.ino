@@ -277,7 +277,7 @@ void Accelerate()
     return;
   }
   
-  sprintf(response_buff, "%d,0;", seq);
+  sprintf(response_buff, "%d,0", seq);
   cmdMessenger.sendCmd(kACCEL,response_buff);
   if(val < 0 && forwardDirection == true)
   {

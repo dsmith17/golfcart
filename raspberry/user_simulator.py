@@ -59,6 +59,7 @@ Session = requests.session()
 issueCommand('reset')
 time.sleep(2)
 while(1):
-    command = random.choice(['faster', 'slower', 'left', 'right', 'stop'])
+    # command = random.choice(['faster', 'slower', 'left', 'right', 'stop'])
+    command = random.choice(['faster', 'slower'])
     issueCommand(command)
     time.sleep(2.1)

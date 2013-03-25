@@ -3,28 +3,28 @@ import time
 import serial #Has to be installed from pyserial.sourceforge.net/
 from log import *
 
-GPSConnected = False
-GPS_Port = ''
+Connected = False
+_Port = ''
 
 # Serial port used to communicate with GPS
 def open(port) :
-    global GPS_Port
-    global GPSConnected
+    global _Port
+    global Connected
     try :
-        GPS_Port = serial.Serial(port, 4800, timeout=0)
-        GPSConnected = True
+        _Port = serial.Serial(port, 4800, timeout=0)
+        Connected = True
         writeLog(LOG_DETAILS, 'Connected to GPS: ' + str(port))
     except Exception as err :
         writeLog(LOG_ERROR, 'Unable to connect to GPS: ' + str(port))
 
-GPS_lat = 0.0
-GPS_long = 0.0
-GPS_dir = 0.0
-GPS_speed = 0.0
-GPS_time = 0.0
-GPS_Buffer = ' '
+Latitude = 0.0
+Longitude = 0.0
+Direction = 0.0
+Speed = 0.0
+Time = 0.0
+_Buffer = ' '
 
-def GPS_valid_msg(msg) :
+def _valid_msg(msg) :
   try:
     valid = True
     if msg[0] != '$' :
@@ -48,16 +48,16 @@ def GPS_valid_msg(msg) :
       print 'invalid GPS: ', msg, len(msg), p
       return False
 
-def GPS_set_time(val) :
-    global GPS_time
+def _set_time(val) :
+    global Time
     new_time = float(val)
-    if new_time != GPS_time :
-        GPS_time = new_time
-        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(GPS_time))
+    if new_time != Time :
+        Time = new_time
+        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(Time))
 
-def GPS_set_lat_long(lat, lat_hemi, longt, longt_hemi) :
-    global GPS_lat
-    global GPS_long
+def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
+    global Latitude
+    global Longitude
     
     if len(lat) == 0 or len(longt) == 0 :
         return
@@ -70,83 +70,83 @@ def GPS_set_lat_long(lat, lat_hemi, longt, longt_hemi) :
     if longt_hemi == 'E' :
         new_long = -new_long
         
-    if new_lat != GPS_lat or new_long != GPS_long :
+    if new_lat != Latitude or new_long != Longitude :
         writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
-    GPS_lat = new_lat
-    GPS_long = new_long
+    Latitude = new_lat
+    Longitude = new_long
     
-def GPS_set_speed(val) :
-    global GPS_speed
+def _set_speed(val) :
+    global Speed
     if len(val) != 0 :
         new_speed = float(val)
 
-        if new_speed != GPS_speed :
+        if new_speed != Speed :
             writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
-            GPS_speed = new_speed
-def GPS_set_dir(val) :
-    global GPS_dir
+            Speed = new_speed
+def _set_dir(val) :
+    global Direction
     if len(val) != 0 :
         new_dir = float(val)
-        if new_dir != GPS_dir :
-            GPS_dir = new_dir
-            writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(GPS_dir))
+        if new_dir != Direction :
+            Direction = new_dir
+            writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
 
-def GPGGA(fields):
-    GPS_set_time(fields[1])
-    GPS_set_lat_long(fields[2],fields[3],fields[4], fields[5])
-def GPGLL(fields):
-    GPS_set_time(fields[5])
-    GPS_set_lat_long(fields[1],fields[2],fields[3], fields[4])   
-def GPGSA(fields):
+def _GPGGA(fields):
+    _set_time(fields[1])
+    _set_lat_long(fields[2],fields[3],fields[4], fields[5])
+def _GPGLL(fields):
+    _set_time(fields[5])
+    _set_lat_long(fields[1],fields[2],fields[3], fields[4])   
+def _GPGSA(fields):
     # GPS satelite data and whether locked or not
     pass
-def GPRMC(fields):
-    GPS_set_time(fields[1])
-    GPS_set_lat_long(fields[3],fields[4],fields[5], fields[6])
-    GPS_set_speed(fields[7])
-    GPS_set_dir(fields[8])
-def GPGSV(fields) :
+def _GPRMC(fields):
+    _set_time(fields[1])
+    _set_lat_long(fields[3],fields[4],fields[5], fields[6])
+    _set_speed(fields[7])
+    _set_dir(fields[8])
+def _GPGSV(fields) :
     # GPS satelite data and quality
     pass
-def GPVTG(fields):
-    GPS_set_speed(fields[3])
-    GPS_set_dir(fields[1])
+def _GPVTG(fields):
+    _set_speed(fields[3])
+    _set_dir(fields[1])
 
-GPS_func = {'$GPVTG': GPVTG,
-            '$GPGGA': GPGGA,
-            '$GPGLL': GPGLL,
-            '$GPGSA': GPGSA,
-            '$GPRMC': GPRMC,
-            '$GPGSV': GPGSV}
+_func = {'$GPVTG': _GPVTG,
+            '$GPGGA': _GPGGA,
+            '$GPGLL': _GPGLL,
+            '$GPGSA': _GPGSA,
+            '$GPRMC': _GPRMC,
+            '$GPGSV': _GPGSV}
 
-def checkGPS():
-    global GPS_Port
-    global GPSConnected
-    global GPS_Buffer
+def Check():
+    global _Port
+    global Connected
+    global _Buffer
 
-    if not GPSConnected :
+    if not Connected :
         return
 
-    count = GPS_Port.inWaiting()
+    count = _Port.inWaiting()
     if (count > 0) :
-        buff = GPS_Port.read(size=count)
-        GPS_Buffer = GPS_Buffer + buff
+        buff = _Port.read(size=count)
+        _Buffer = _Buffer + buff
         
-    start = GPS_Buffer.find('$')
+    start = _Buffer.find('$')
     if start == -1 :
-        GPS_Buffer = ''
+        _Buffer = ''
         return
     while start > 0 :
-        end = GPS_Buffer.find('\r',start)
+        end = _Buffer.find('\r',start)
         if end == -1 :
             return
         
-        line = GPS_Buffer[start:end]
-        GPS_Buffer = GPS_Buffer[end:]
+        line = _Buffer[start:end]
+        _Buffer = _Buffer[end:]
 
         if len(line) < 5 :
             return
-        if not GPS_valid_msg(line) :
+        if not _valid_msg(line) :
             writeLog(LOG_ERROR, 'GPS checksum error ' + line)
             return
 
@@ -154,8 +154,8 @@ def checkGPS():
         fields = line.split(',')
     
         try :
-            GPS_func[fields[0]](fields)
+            _func[fields[0]](fields)
         except KeyError as err :
             writeLog(LOG_ERROR, 'unknown GPS command: '+line)
 
-        start = GPS_Buffer.find('$')
+        start = _Buffer.find('$')

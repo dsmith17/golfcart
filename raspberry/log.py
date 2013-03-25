@@ -3,7 +3,8 @@ import time
 
 # Log file records timestamped activity. Data being logged can be controlled
 # by setting logMask and logConsoleMask
-logFile = open('log-PythonClient.txt', 'w')
+logFile = open('log-PythonClient.txt', 'a')
+
 LOG_PING_SERVER = 0x00000001
 LOG_NEW_COMMAND = 0x00000002
 LOG_SERIAL_OUT  = 0x00000004
