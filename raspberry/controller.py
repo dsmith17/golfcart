@@ -292,16 +292,17 @@ def pingServer(sequence_only=False):
         Sequence = new_seq
         writeLog(LOG_NEW_COMMAND, 'New command: ' + str(commandParts))
         execute(commandParts)
+        get_arduino_status()
     elif commandParts[1] == 'reset' :
         cmd_reset()
 
 timeLastStatus = 0    
-def checkArduinoStatus(sequence_only=False):
+def checkArduinoStatus():
     global timeLastStatus
 
     # don't ping too often 
     curTime = time.time()
-    if curTime - timeLastStatus < 1.1 :
+    if curTime - timeLastStatus < 300 :
         return
     get_arduino_status()
     
@@ -337,6 +338,7 @@ def serial_cmd(cmd, param) :
     if str(cmd) != args[0] or str(Arduino_Sequence) != args[1] :
         writeLog(LOG_SERIAL_ERROR, "Serial Resp Mismatch: " + str(cmd) + " " + args[0] + " " + str(Arduino_Sequence) + " " + args[1])
 def get_arduino_status() :
+    global timeLastStatus
     global Arduino
     global Arduino_Sequence
     global Speed
@@ -345,6 +347,9 @@ def get_arduino_status() :
     global Brake
     global Steer_Mode
 
+    if not ArduinoConnected :
+        return
+    
     Arduino_Sequence = Arduino_Sequence + 1
     command = str(ARDUINO_STATUS) + ', ' + str(Arduino_Sequence) + ';'
     Arduino.write(command)
@@ -359,7 +364,7 @@ def get_arduino_status() :
         Direction  = int(args[4])
         Brake      = int(args[5])
         Steer_Mode = int(args[6])
-
+    timeLastStatus = time.time()
 def cmd_reset() :
     global Sequence
     writeLog(LOG_DETAILS, 'reset Sequence number')
