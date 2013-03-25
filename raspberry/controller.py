@@ -1,18 +1,18 @@
 # needs requests module from http://docs.python-requests.org/en/latest/
 import requests
-#import urllib2
 import io
 import time
 import serial #Has to be installed from pyserial.sourceforge.net/
-#import termios, fcntl, sys, os
+from log import *
+import GPS
 
 url = 'http://157.182.184.52/~agc/command.php'
+GPS_port = 'COM17'
 
 Commands = {"steer": "4", "speed" : "5", "brake" : "6",
             "dir" : "7", "steer mode" : "8"}
 ARDUINO_STATUS = 9
 ArduinoConnected = False
-GPSConnected = False
 
 # status variables
 Speed = 0
@@ -33,55 +33,6 @@ try :
     ArduinoConnected = True
 except Exception as err :
     print 'Unable to connect to Arduino'
-
-# Serial port used to communicate with GPS
-try :
-    GPS = serial.Serial('COM17', 4800, timeout=0)
-    GPSConnected = True
-except Exception as err :
-    print 'Unable to connect to GPS'
-
-GPS_lat = 0.0
-GPS_long = 0.0
-GPS_dir = 0.0
-GPS_speed = 0.0
-GPS_time = 0.0
-GPS_Buffer = ' '
-
-# Log file records timestamped activity. Data being logged can be controlled
-# by setting logMask and logConsoleMask
-logFile = open('log-PythonClient.txt', 'w')
-LOG_PING_SERVER = 0x00000001
-LOG_NEW_COMMAND = 0x00000002
-LOG_SERIAL_OUT  = 0x00000004
-LOG_SERIAL_IN   = 0x00000008
-LOG_SERIAL_ERROR= 0x00000010
-LOG_PING        = 0x00000020
-LOG_SEQ_ERROR   = 0x00000040
-LOG_GPS_RAW     = 0x00001000
-LOG_GPS_POS     = 0x00002000
-LOG_GPS_DIR     = 0x00004000
-LOG_GPS_SPEED   = 0x00008000
-LOG_GPS_TIME    = 0x00010000
-LOG_DETAILS     = 0x40000000
-LOG_ERROR       = 0x80000000
-LOG_ALWAYS      = 0xFFFFFFFF
-logMask         = 0xFFFFFFFF & ~(LOG_PING_SERVER)
-logConsoleMask  = 0xFFFFFFFF & ~(LOG_PING_SERVER | LOG_GPS_RAW)
-
-def writeLog(mask, msg):
-    global logFile
-    global logMask
-    global Pings
-    global Sequence
-
-    curTime = time.time()
-    outMsg = time.ctime(curTime) + ' P:' + str(Pings) + ' S:' + str(Sequence) + ' ' + str(msg)
-    if mask & logMask :
-        logFile.write(outMsg + '\n')
-        logFile.flush()
-    if mask & logConsoleMask :
-        print outMsg
 
 def formatUrl():
     formattedUrl = url + '?speed='+str(Speed) + '&steer='+str(Steer)
@@ -107,142 +58,6 @@ def is_int(val) :
         return True
     except :
         return False
-
-def GPS_valid_msg(msg) :
-  try:
-    valid = True
-    if msg[0] != '$' :
-        return False
-
-    checksum = 0
-    p = 1
-    c = ord(msg[p])
-    while chr(c) != '*' and p < len(msg) :
-        checksum = checksum ^ c
-        p = p + 1
-        c = ord(msg[p])
-    if msg[p] != '*' :
-        return False
-    
-    nmeaCheck = int(msg[p+1:p+3], 16)
-
-    return nmeaCheck == checksum
-  except Exception as err :
-      writeLog(LOG_ERROR, 'Exception in GPS_valid_msg: ' + str(err))
-      print 'invalid GPS: ', msg, len(msg), p
-      return False
-
-def GPS_set_time(val) :
-    global GPS_time
-    new_time = float(val)
-    if new_time != GPS_time :
-        GPS_time = new_time
-        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(GPS_time))
-
-def GPS_set_lat_long(lat, lat_hemi, longt, longt_hemi) :
-    global GPS_lat
-    global GPS_long
-    
-    if len(lat) == 0 or len(longt) == 0 :
-        return
-
-    new_lat = float(lat[0:2]) + float(lat[2:])/60
-    if lat_hemi == 'S' :
-        new_lat = -new_lat
-        
-    new_long = float(longt[0:3]) + float(longt[3:])/60
-    if longt_hemi == 'E' :
-        new_long = -new_long
-        
-    if new_lat != GPS_lat or new_long != GPS_long :
-        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
-    GPS_lat = new_lat
-    GPS_long = new_long
-    
-def GPS_set_speed(val) :
-    global GPS_speed
-    if len(val) != 0 :
-        new_speed = float(val)
-
-        if new_speed != GPS_speed :
-            writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
-            GPS_speed = new_speed
-def GPS_set_dir(val) :
-    global GPS_dir
-    if len(val) != 0 :
-        new_dir = float(val)
-        if new_dir != GPS_dir :
-            GPS_dir = new_dir
-            writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(GPS_dir))
-
-def GPGGA(fields):
-    GPS_set_time(fields[1])
-    GPS_set_lat_long(fields[2],fields[3],fields[4], fields[5])
-def GPGLL(fields):
-    GPS_set_time(fields[5])
-    GPS_set_lat_long(fields[1],fields[2],fields[3], fields[4])   
-def GPGSA(fields):
-    # GPS satelite data and whether locked or not
-    pass
-def GPRMC(fields):
-    GPS_set_time(fields[1])
-    GPS_set_lat_long(fields[3],fields[4],fields[5], fields[6])
-    GPS_set_speed(fields[7])
-    GPS_set_dir(fields[8])
-def GPGSV(fields) :
-    # GPS satelite data and quality
-    pass
-def GPVTG(fields):
-    GPS_set_speed(fields[3])
-    GPS_set_dir(fields[1])
-
-GPS_func = {'$GPVTG': GPVTG,
-            '$GPGGA': GPGGA,
-            '$GPGLL': GPGLL,
-            '$GPGSA': GPGSA,
-            '$GPRMC': GPRMC,
-            '$GPGSV': GPGSV}
-
-def checkGPS():
-    global GPS
-    global GPSConnected
-    global GPS_Buffer
-
-    if not GPSConnected :
-        return
-
-    count = GPS.inWaiting()
-    if (count > 0) :
-        buff = GPS.read(size=count)
-        GPS_Buffer = GPS_Buffer + buff
-        
-    start = GPS_Buffer.find('$')
-    if start == -1 :
-        GPS_Buffer = ''
-        return
-    while start > 0 :
-        end = GPS_Buffer.find('\r',start)
-        if end == -1 :
-            return
-    
-        line = GPS_Buffer[start:end]
-        GPS_Buffer = GPS_Buffer[end:]
-
-        if len(line) < 5 :
-            return
-        if not GPS_valid_msg(line) :
-            writeLog(LOG_ERROR, 'GPS checksum error ' + line)
-            return
-
-        writeLog(LOG_GPS_RAW, line)
-        fields = line.split(',')
-    
-        try :
-            GPS_func[fields[0]](fields)
-        except KeyError as err :
-            writeLog(LOG_ERROR, 'unknown GPS command: '+line)
-
-        start = GPS_Buffer.find('$')
 
 
 timeLastPing = 0    
@@ -408,7 +223,7 @@ def execute(command) :
 Sequence = 0
 def  poll():
     pingServer()
-    checkGPS()
+    GPS.checkGPS()
     checkArduinoStatus()
     time.sleep(0.55)
 
@@ -416,6 +231,7 @@ def  poll():
 writeLog(LOG_ALWAYS, 'AGC Startup')
 if ArduinoConnected :
     line = arduino_resp()
+GPS.open(GPS_port)
 pingServer(sequence_only=True)
 writeLog(LOG_ALWAYS, 'AGC Startup: seq='+str(Sequence))
 while(1):
