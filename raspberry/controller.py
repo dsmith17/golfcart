@@ -4,8 +4,10 @@ import Arduino
 import Server
 
 url = 'http://157.182.184.52/~agc/command.php'
-GPS_Port = 'COM17'
-Arduino_Port = 'COM6'
+# GPS_Port = 'COM17'
+GPS_Port = '/dev/ttyUSB0'
+# Arduino_Port = 'COM6'
+Arduino_Port = '/dev/ttyACM0'
 
 def  poll():
     Server.Ping()
@@ -18,6 +20,6 @@ writeLog(LOG_ALWAYS, 'AGC Startup')
 Server.open(url)
 Arduino.open(Arduino_Port)
 GPS.open(GPS_Port)
-Server.Ping(sequence_only=True)
+
 while(1):
     poll()

@@ -8,7 +8,8 @@ import Arduino
 
 _URL = 'http://157.182.184.52/~agc/command.php'
 _Pings = 0
-_TimeLastPing = 0    
+_TimeLastPing = 0
+_Sequence = 0
 
 # session used to communicate with server
 _Session = requests.session()
@@ -22,6 +23,9 @@ def open(url) :
     _Session = requests.session()
     _Pings = 0
     _TimeLastPing = 0
+    _Sequence = 0
+
+    Ping(sequence_only=True)
     
 def _formatUrl():
     formattedUrl = _URL + '?speed='+str(Arduino.Speed) + '&steer='+str(Arduino.Steer)
@@ -59,7 +63,6 @@ def Ping(sequence_only=False):
     global _Sequence
     global _Pings
     global _TimeLastPing
-    global _Sequence
 
     # don't ping too often or the server gets crabby
     curTime = time.time()
@@ -104,7 +107,7 @@ def Ping(sequence_only=False):
         _cmd_reset()
 
 def _cmd_reset() :
-    global Sequence
+    global _Sequence
     writeLog(LOG_DETAILS, 'reset Sequence number')
-    Sequence = 0
+    _Sequence = 0
 
