@@ -12,3 +12,11 @@ For the web server code to work, there needs to be a directory called data to wh
 
 Python version 2.7
 Arduino version 1.1 (Arduino Mega boards rv. 1-3 tested)
+
+Dependencies
+============
+
+Arudino
+-Base64
+-Streaming
+-CmdMessenger

@@ -44,7 +44,9 @@ volatile double steeringAngle;
 volatile boolean inter_1_state;
 volatile boolean inter_2_state;
 volatile boolean inter_g_state;
-int steerSetAngle;
+volatile boolean activeSteer = false;
+volatile int steerState = 0; // 1=left, 0=stop, -1=right
+double steerSetAngle;
 boolean forwardDirection = true;
 volatile boolean brake_state = false;
 int brakeSetTime;
@@ -105,39 +107,65 @@ void attach_callbacks(messengerCallbackFunction* callbacks)
 
 void steerPulse()
 {
-#ifdef STEER_ACTIVE
-  if(steeringAngle >= (steerSetAngle - DEGREE_PREC/2) || steeringAngle <= (steerSetAngle + DEGREE_PREC/2)) 
+  if(activeSteer)
   {
-    stopSteering();
+    if(steeringAngle >= (steerSetAngle - DEGREE_PREC/2) || steeringAngle <= (steerSetAngle + DEGREE_PREC/2)) 
+    {
+      stopSteering();
+    }
+    else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2) && (steeringAngle - steerSetAngle) < DEGREE_DELTA)
+    {
+      steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
+    }
+    else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2) && (steerSetAngle - steeringAngle) < DEGREE_DELTA)
+    {
+      steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
+    }
+    else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2))
+    {
+      steer.writeMicroseconds(STEER_RUN);
+    }
+    else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2))
+    {
+      steer.writeMicroseconds(STEER_LUN);
+    }
   }
-  else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2) && (steeringAngle - steerSetAngle) < DEGREE_DELTA)
+  else
   {
-    steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
+    if(steerState == 1)
+    {
+      if(steeringAngle >= steerSetAngle)
+      {
+        stopSteering();
+      }
+    else(steerState == -1)
+    {
+      if(steeringAngle <= steerSetAngle)
+      {
+        stopSteering();
+      }
+    }
   }
-  else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2) && (steerSetAngle - steeringAngle) < DEGREE_DELTA)
-  {
-    steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
-  }
-  else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2))
-  {
-    steer.writeMicroseconds(STEER_RUN);
-  }
-  else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2))
-  {
-    steer.writeMicroseconds(STEER_LUN);
-  }
-#else
-  if(steeringAngle >= steerSetAngle)
-  {
-    stopSteering();
-  }
-#endif
   setTime();
+  //Serial.println(steeringAngle);
 }
 
 void stopSteering()
 {
   steer.writeMicroseconds(1500);
+}
+
+// When in active steer state the steering will try and keep the set angle
+void setActiveSteer()
+{
+  activeSteer = 1;
+}
+
+// When in Passive state the steering will set the steering angle then 
+// release control
+void setPassiveSteer()
+{
+  activeSteer = 0;
 }
 
 //steer_inter_1 is called when ever the opical encoder inits a interupt
@@ -162,7 +190,8 @@ void steer_inter_1()
       steeringAngle = steeringAngle - STEER_UNIT;
   }
  
-//  cmdMessenger.sendCmd(kACK,);  
+//  cmdMessenger.sendCmd(kACK,);
+  //Serial.println(steeringAngle);
 }   
 
 void steer_inter_2()
@@ -177,7 +206,7 @@ void steer_inter_2()
   }
   else
   {
-    if(inter_1_state)
+    if(inter_2_state)
       steeringAngle = steeringAngle - STEER_UNIT;
     else
       steeringAngle = steeringAngle + STEER_UNIT;
@@ -202,12 +231,14 @@ void Steering()
     steer.write(2000);
     //delay(1250);
     //moveSteering(false);
+    steerState = 1;
     cmdMessenger.sendCmd(kACK,"I got left");
   }
   else if (steeringAngle < buf)
   {
     steer.write(1000);
     //moveSteering(true);
+    steerState = -1;
     cmdMessenger.sendCmd(kACK,"I got right");
   }
   //steeringAngle = intbuf;
