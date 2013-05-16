@@ -7,12 +7,12 @@
 #define STEER_RUN 	2000
 #define STEER_LUN       1000
 #define STEER_TIME 	800
-#define STEER_UNIT      0.36 // the model#  360/1000
-#define STEER_INTER_1   4 //pin 21
+#define STEER_UNIT      0.036/2 // the model#  360/10000
+#define STEER_INTER_1   4 //pin 19
 #define STEER_PIN_1     19
-#define STEER_INTER_2   5 //pin 20
+#define STEER_INTER_2   5 //pin 18
 #define STEER_PIN_2     18
-#define STEER_INTER_G   4 //pin 19
+#define STEER_INTER_G   3 //pin 20
 #define STEER_PIN	9
 #define STEER_ACTIVE    true
 #define DEGREE_PREC     5
@@ -56,6 +56,7 @@ int intbuf;
 int i = 0;
 int currentSpeed = 0;
 char response_buff[50];
+int printnow = 0;
 
 // Mustnt conflict / collide with our message payload data. Fine if we use base64 library ^^ above
 char field_separator = ',';
@@ -107,52 +108,64 @@ void attach_callbacks(messengerCallbackFunction* callbacks)
 
 void steerPulse()
 {
-  if(activeSteer)
-  {
-    if(steeringAngle >= (steerSetAngle - DEGREE_PREC/2) || steeringAngle <= (steerSetAngle + DEGREE_PREC/2)) 
-    {
-      stopSteering();
-    }
-    else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2) && (steeringAngle - steerSetAngle) < DEGREE_DELTA)
-    {
-      steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
-    }
-    else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2) && (steerSetAngle - steeringAngle) < DEGREE_DELTA)
-    {
-      steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
-    }
-    else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2))
-    {
-      steer.writeMicroseconds(STEER_RUN);
-    }
-    else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2))
-    {
-      steer.writeMicroseconds(STEER_LUN);
-    }
-  }
-  else
-  {
-    if(steerState == 1)
+//  if(activeSteer)
+//  {
+//    if(steeringAngle >= (steerSetAngle - DEGREE_PREC/2) || steeringAngle <= (steerSetAngle + DEGREE_PREC/2)) 
+//    {
+//      stopSteering();
+//    }
+//    else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2) && (steeringAngle - steerSetAngle) < DEGREE_DELTA)
+//    {
+//      steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
+//    }
+//    else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2) && (steerSetAngle - steeringAngle) < DEGREE_DELTA)
+//    {
+//      steer.writeMicroseconds(1400 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*400);
+//    }
+//    else if(steeringAngle < (steerSetAngle - DEGREE_PREC/2))
+//    {
+//      steer.writeMicroseconds(STEER_RUN);
+//    }
+//    else if(steeringAngle > (steerSetAngle + DEGREE_PREC/2))
+//    {
+//      steer.writeMicroseconds(STEER_LUN);
+//    }
+//  }
+//  else
+//  {
+    if(steerState == -1) // 1 is left
     {
       if(steeringAngle >= steerSetAngle)
       {
+        Serial.println("Stopping Right Turn");
+        Serial.println(steeringAngle);
         stopSteering();
+        steerState = 0;
       }
-    else(steerState == -1)
+    }
+    else if(steerState == 1) // -1 is right
     {
       if(steeringAngle <= steerSetAngle)
       {
+        Serial.println("Stopping Left Turn");
+        Serial.println(steeringAngle);
         stopSteering();
+        steerState = 0;
       }
     }
-  }
+//  }
   setTime();
-  //Serial.println(steeringAngle);
+  if(printnow == 1)
+  {
+    Serial.println(steeringAngle);
+    printnow = 0;
+  }
 }
 
 void stopSteering()
 {
   steer.writeMicroseconds(1500);
+  Serial.println("I am Stopping");
 }
 
 // When in active steer state the steering will try and keep the set angle
@@ -175,41 +188,43 @@ void setPassiveSteer()
 void steer_inter_1()
 {
   inter_1_state = digitalRead(STEER_PIN_1);
+  inter_2_state = digitalRead(STEER_PIN_2);
   if (inter_2_state)
   {
     if(inter_1_state)
-      steeringAngle = steeringAngle - STEER_UNIT;
-    else
       steeringAngle = steeringAngle + STEER_UNIT;
+    else
+      steeringAngle = steeringAngle - STEER_UNIT;
   }
   else
   {
     if(inter_1_state)
-      steeringAngle = steeringAngle + STEER_UNIT;
-    else
       steeringAngle = steeringAngle - STEER_UNIT;
+    else
+      steeringAngle = steeringAngle + STEER_UNIT;
   }
- 
+//  printnow = 1;
 //  cmdMessenger.sendCmd(kACK,);
-  //Serial.println(steeringAngle);
+//  Serial.println(steeringAngle);
 }   
 
 void steer_inter_2()
 {
+  inter_1_state = digitalRead(STEER_PIN_1);
   inter_2_state = digitalRead(STEER_PIN_2);
   if (inter_1_state)
   {
     if(inter_2_state)
-      steeringAngle = steeringAngle + STEER_UNIT;
-    else
       steeringAngle = steeringAngle - STEER_UNIT;
+    else
+      steeringAngle = steeringAngle + STEER_UNIT;
   }
   else
   {
     if(inter_2_state)
-      steeringAngle = steeringAngle - STEER_UNIT;
-    else
       steeringAngle = steeringAngle + STEER_UNIT;
+    else
+      steeringAngle = steeringAngle - STEER_UNIT;
   }
   //cmdMessenger.sendCmd(kACK,"The steer angle is: %d",steeringAngle);
 }   
@@ -221,14 +236,14 @@ void Steering()
     buf = cmdMessenger.readInt();
   }
   cmdMessenger.sendCmd(kACK,"I got Steer");
-  intbuf = buf & 0x7FFF;
+  //intbuf = buf & 0x7FFF;
   //intbuf = buf & 127255;      //B01111111111111111
   //steerSetTime = STEER_TIME + time;
-  steerSetAngle = intbuf;
+  steerSetAngle = buf;
   
   if (steeringAngle > buf)
   {
-    steer.write(2000);
+    steer.write(1900);
     //delay(1250);
     //moveSteering(false);
     steerState = 1;
@@ -236,7 +251,7 @@ void Steering()
   }
   else if (steeringAngle < buf)
   {
-    steer.write(1000);
+    steer.write(1100);
     //moveSteering(true);
     steerState = -1;
     cmdMessenger.sendCmd(kACK,"I got right");
