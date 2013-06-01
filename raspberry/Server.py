@@ -6,7 +6,7 @@ from log import *
 import GPS
 import Arduino
 
-_URL = 'http://157.182.184.52/~agc/command.php'
+_URL = 'http://157.182.184.52/~student1/command.php'
 _Pings = 0
 _TimeLastPing = 0
 _Sequence = 0

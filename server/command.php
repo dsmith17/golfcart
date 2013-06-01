@@ -11,7 +11,7 @@ foreach ($_GET as $key=>$value)
 flock($file, LOCK_UN);
 fclose($file);
 
-$comFile = "data/commandFile.txt";
+$comFile = "data/comFile.txt";
 $file = fopen($comFile, 'r') or die("can't open file");
 flock($file, LOCK_EX);
 $cmd = fgets($file);

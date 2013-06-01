@@ -20,9 +20,11 @@
 
 #define BRAKE_UNIT 	1800
 #define BRAKE_TIME 	500
-#define BRAKE_ON_PIN    30 //pin 2
-#define BRAKE_OFF_PIN   31 //pin 3
+#define BRAKE_ON_PIN    38 //pin 2
+#define BRAKE_OFF_PIN   39 //pin 3
 #define BRAKE_PIN	8
+#define BRAKE_RELEASE   1000
+#define BRAKE_APPLY     2000
 
 #define ACCEL_UNIT 	100
 #define ACCEL_MIN	1000
@@ -48,7 +50,10 @@ volatile boolean activeSteer = true;
 volatile int steerState = 0; // 1=left, 0=stop, -1=right
 double steerSetAngle;
 boolean forwardDirection = true;
-volatile boolean brake_state = false;
+volatile int brake_status = 0; // 0=release, 1=applying, 2=not moving
+int brake_on_state;
+int brake_off_state;
+volatile boolean brake_set = false;
 int brakeSetTime;
 int time;
 int buf;
@@ -76,6 +81,8 @@ enum
   kSTEERING      = 4,
   kACCEL         = 5,
   kSTOP          = 6,
+  kDIRECTION     = 7,
+  kSTEERMODE     = 8,
   kSTATUS        = 9,
   // For the above commands, we just call cmdMessenger.sendCmd() anywhere we want in our Arduino program.
 
@@ -127,16 +134,16 @@ void steerPulse()
   {
     if(steerState == -1) //turning right
     {
-      if(steeringAngle >= (steerSetAngle - DEGREE_PREC))
+      if(steeringAngle >= steerSetAngle)
       {
         steerState = 0;
-        Serial.println("Stopping right");
-        Serial.println(steeringAngle);
+        //Serial.println("Stopping right");
+        //Serial.println(steeringAngle);
         stopSteering();        
       }
       else if(steeringAngle < (steerSetAngle - DEGREE_PREC) && (setAngle - curAngle) < DEGREE_DELTA)
       {
-        Serial.println("Im slowing right");
+        //Serial.println("Im slowing right");
         steer.writeMicroseconds(1200);
         //steer.writeMicroseconds(1800 + ((steeringAngle + steerSetAngle)/DEGREE_DELTA)*100);
         
@@ -144,31 +151,31 @@ void steerPulse()
     }
     else if(steerState == 1) //turning left
     {
-      if(steeringAngle <= (steerSetAngle + DEGREE_PREC))
+      if(steeringAngle <= steerSetAngle)
       {
         steerState = 0;
-        Serial.println("Stopping left");
-        Serial.println(steeringAngle);
+        //Serial.println("Stopping left");
+        //Serial.println(steeringAngle);
         stopSteering();
       }
       else if(steeringAngle > (steerSetAngle + DEGREE_PREC) && (curAngle - setAngle) < DEGREE_DELTA)
       {
-        Serial.println("Im slowing left");
+        //Serial.println("Im slowing left");
         steer.writeMicroseconds(1800);
         //steer.writeMicroseconds(1200 - ((steeringAngle - steerSetAngle)/DEGREE_DELTA)*100);
       }
     }
     else if(steeringAngle < (steerSetAngle - DEGREE_PREC))
     {
-      Serial.println("Starting right");
-      Serial.println(steeringAngle);
+      //Serial.println("Starting right");
+      //Serial.println(steeringAngle);
       steerState = -1;
       steer.writeMicroseconds(STEER_R_SPEED);
     }
     else if(steeringAngle > (steerSetAngle + DEGREE_PREC))
     {
-      Serial.println("Starting left");
-      Serial.println(steeringAngle);
+      //Serial.println("Starting left");
+      //Serial.println(steeringAngle);
       steerState = 1;
       steer.writeMicroseconds(STEER_L_SPEED);
     }
@@ -202,8 +209,8 @@ void steerPulse()
     {
       if(steeringAngle >= steerSetAngle)
       {
-        Serial.println("Stopping Right Turn");
-        Serial.println(steeringAngle);
+        //Serial.println("Stopping Right Turn");
+        //Serial.println(steeringAngle);
         stopSteering();
         steerState = 0;
       }
@@ -212,8 +219,8 @@ void steerPulse()
     {
       if(steeringAngle <= steerSetAngle)
       {
-        Serial.println("Stopping Left Turn");
-        Serial.println(steeringAngle);
+        //Serial.println("Stopping Left Turn");
+        //Serial.println(steeringAngle);
         stopSteering();
         steerState = 0;
       }
@@ -222,7 +229,7 @@ void steerPulse()
   setTime();
   if(printnow == 1)
   {
-    Serial.println(steeringAngle);
+    //Serial.println(steeringAngle);
     printnow = 0;
   }
 }
@@ -294,17 +301,48 @@ void steer_inter_2()
   //cmdMessenger.sendCmd(kACK,"The steer angle is: %d",steeringAngle);
 }   
 
+void steerMode()
+{
+  int seq, val;
+  
+  seq = cmdMessenger.readInt();
+  if (cmdMessenger.available())
+     val = cmdMessenger.readInt();
+  else
+  {
+    cmdMessenger.sendCmd(kACK, "Invalid command");
+    return;
+  }
+  
+  sprintf(response_buff, "%d,0", seq);
+  cmdMessenger.sendCmd(kSTEERMODE,response_buff);
+  
+  if(val == 0)
+    activeSteer = true;
+  else if(val = 1)
+    activeSteer = false;
+}
+
 void Steering()
 {
-  while( cmdMessenger.available())
-  {    
-    buf = cmdMessenger.readInt();
+  int seq, val;
+  
+  seq = cmdMessenger.readInt();
+  if (cmdMessenger.available())
+     val = cmdMessenger.readInt();
+  else
+  {
+    cmdMessenger.sendCmd(kACK, "Invalid command");
+    return;
   }
-  cmdMessenger.sendCmd(kACK,"I got Steer");
+  
+  sprintf(response_buff, "%d,0", seq);
+  cmdMessenger.sendCmd(kSTEERING,response_buff);
+  
   //intbuf = buf & 0x7FFF;
   //intbuf = buf & 127255;      //B01111111111111111
   //steerSetTime = STEER_TIME + time;
-  steerSetAngle = buf;
+  steerSetAngle = val;
   
   if (steeringAngle > buf)
   {
@@ -312,14 +350,14 @@ void Steering()
     //delay(1250);
     //moveSteering(false);
     steerState = 1;
-    cmdMessenger.sendCmd(kACK,"I got left");
+    //cmdMessenger.sendCmd(kACK,"I got left");
   }
   else if (steeringAngle < buf)
   {
     steer.write(1100);
     //moveSteering(true);
     steerState = -1;
-    cmdMessenger.sendCmd(kACK,"I got right");
+    //cmdMessenger.sendCmd(kACK,"I got right");
   }
   //steeringAngle = intbuf;
 }
@@ -330,19 +368,30 @@ void Steering()
 // to set the acceleration to. It calls formatDACommand to 
 // ensure a correctly formated value is passed to the DAC
 
-void switchDirection(boolean forward)
+//The raspberry pi is responsible for stopping the golf cart
+// before the switchDirection function is called.
+void SwitchDirection()
 {
-//  while( cmdMessenger.available())
-//  {    
-//    buf = cmdMessenger.readInt();
-//  }
-  if(forward)
+  int seq, val;
+  
+  seq = cmdMessenger.readInt();
+  if (cmdMessenger.available())
+     val = cmdMessenger.readInt();
+  else
+  {
+    cmdMessenger.sendCmd(kACK, "Invalid command");
+    return;
+  }
+  sprintf(response_buff, "%d,0", seq);
+  cmdMessenger.sendCmd(kDIRECTION,response_buff);
+  
+  if(val == 0)
   {
     stopAccel();
     forwardDirection = true;
     digitalWrite(RELAY_DIRECTION,HIGH);
   }
-  else
+  else if(val == 1)
   {
     stopAccel();
     forwardDirection = false;
@@ -390,18 +439,19 @@ void Accelerate()
   
   sprintf(response_buff, "%d,0", seq);
   cmdMessenger.sendCmd(kACCEL,response_buff);
-  if(val < 0 && forwardDirection == true)
-  {
-    switchDirection(false);
-    setAccel(-val);
-  }
-  else if (val > 0 && forwardDirection == false)
-  {
-    switchDirection(true);
-    setAccel(val);
-  }
-  else
-    setAccel(abs(val));
+//  if(val < 0 && forwardDirection == true)
+//  {
+//    switchDirection(false);
+//    setAccel(-val);
+//  }
+//  else if (val > 0 && forwardDirection == false)
+//  {
+//    switchDirection(true);
+//    setAccel(val);
+//  }
+//  else
+  currentSpeed = val;
+  setAccel(abs(val));
 }
 
 /************************************************************/
@@ -409,43 +459,68 @@ void Accelerate()
 
 void Stop()
 {
-  cmdMessenger.sendCmd(kACK,"I got Stop");
-  stopAll();
+  int seq, val;
+  
+  seq = cmdMessenger.readInt();
+  if (cmdMessenger.available())
+     val = cmdMessenger.readInt();
+  else
+  {
+    cmdMessenger.sendCmd(kACK, "Invalid command");
+    return;
+  }
+  
+  sprintf(response_buff, "%d,0", seq);
+  cmdMessenger.sendCmd(kACCEL,response_buff);
+  
+  if(val == 1)
+    applyBrake();
+  else
+    releaseBrake();
+    
+  //cmdMessenger.sendCmd(kACK,"I got Stop");
+  //stopAll();
 }
 
 void stopAll()
 {
   stopAccel();
   stopSteering();
-  if(!brake_state)
-    applyBrake();
-}
-
-//void brakePoll()
-//{
-  
-
-void brakeState()
-{
-  brake_state = !brake_state;
-  stopBrake();
-}
-
-void stopBrake()
-{
-  brake.write(1500);
+  applyBrake();
 }
 
 // Call applyBrake() to start the brake motor braking
 // the interupt function stopBrake() will stop the motor
-// when the switch on either end goes from low to high
-// To release brake call applyBrake() again. 
+// when the switch on either end goes from low to high 
 void applyBrake()
 {
-  if(brake_state)
-    brake.write(2000);
-  else
-    brake.write(1000);
+  brake.writeMicroseconds(BRAKE_APPLY);
+  brake_status = 1; // 1 = the brake is being applied
+}
+
+void releaseBrake()
+{
+  brake.writeMicroseconds(BRAKE_RELEASE);
+  brake_status = 0; // 0 = the brake is being released
+}
+
+void brakePulse()
+{
+  brake_on_state = digitalRead(BRAKE_ON_PIN);
+  brake_off_state = digitalRead(BRAKE_OFF_PIN);
+  
+  if(brake_off_state == 1 && brake_status == 0)
+  {
+    brake.writeMicroseconds(1500);
+    brake_set = true;
+    brake_status = 2;
+  }
+  else if(brake_on_state == 1 && brake_status == 1)
+  {
+    brake.writeMicroseconds(1500);
+    brake_set = true;
+    brake_status = 2;
+  }   
 }
 
 void Status()
@@ -467,7 +542,7 @@ void Status()
      dir = 1;
      
   sprintf(response_buff, "%d,%d,%d,%d,%d,%d,0", 
-         seq, steerSetAngle, currentSpeed, dir, brake_state, 0);
+         seq, (int)steeringAngle, currentSpeed, dir, brake_status, 0);
   cmdMessenger.sendCmd(kSTATUS,response_buff);
 }
 
@@ -490,8 +565,10 @@ void setup()
   cmdMessenger.attach(kARDUINO_READY, arduino_ready);
   cmdMessenger.attach(unknownCmd);
   cmdMessenger.attach(kSTEERING, Steering);
-  cmdMessenger.attach(kACCEL,    Accelerate);
+  cmdMessenger.attach(kSTEERMODE, steerMode);
   cmdMessenger.attach(kSTOP,     Stop);
+  cmdMessenger.attach(kDIRECTION, SwitchDirection);
+  cmdMessenger.attach(kACCEL,    Accelerate);  
   cmdMessenger.attach(kSTATUS,   Status);
   arduino_ready();
   
@@ -511,9 +588,10 @@ void setup()
   steer.attach(STEER_PIN);
   steeringAngle = 0.0;
   
-  //attachInterrupt(BRAKE_ON_PIN, brakeState, RISING);
-  //attachInterrupt(BRAKE_OFF_PIN, brakeState, RISING);
-  
+  //attachInterrupt(BRAKE_ON_PIN, brakeInterupt, RISING);
+  //attachInterrupt(BRAKE_OFF_PIN, brakeInterupt, RISING);
+  pinMode(BRAKE_ON_PIN, INPUT_PULLUP);
+  pinMode(BRAKE_OFF_PIN, INPUT_PULLUP);  
   brake.attach(BRAKE_PIN);
   
   steer.writeMicroseconds(1500);
@@ -544,7 +622,7 @@ void loop()
 {
   cmdMessenger.feedinSerialData();
   steerPulse();
-//  brakePulse();
+  brakePulse();
 }
 
 

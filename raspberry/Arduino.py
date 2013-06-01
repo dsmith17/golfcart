@@ -29,6 +29,7 @@ def open(port) :
         _Port = serial.Serial(port, 115200, timeout=1)
         Connected = True
         writeLog(LOG_ALWAYS, 'Connected to Arduino: ' + str(port))
+	sleep(2)
         _resp()
     except Exception as err :
         writeLog(LOG_ERROR, 'Unable to connect to Arduino: ' + str(port))
@@ -45,6 +46,7 @@ def Check():
     
 def _resp() :
     line = _Port.readline()
+    writeLog(LOG_SERIAL_IN, 'Serial input: '+ line)
     #line.strip()
     index = line.rfind(';')
     if index != -1 :
@@ -90,8 +92,10 @@ def Get_Status() :
     writeLog(LOG_SERIAL_OUT, 'Serial out: ' + command)
     line = _resp()
     args = line.split(',')
-    if str(_ARDUINO_STATUS) != args[0] or str(_Sequence) != args[1] :
-        writeLog(LOG_SERIAL_ERROR, "Serial Resp Mismatch: " + str(cmd) + " " + args[0] + " " + str(_Sequence) + " " + args[1])
+    if len(args) < 2 :
+        writeLog(LOG_SERIAL_ERROR, "Serial error: Too few args: " + str(line))
+    elif str(_ARDUINO_STATUS) != args[0] or str(_Sequence) != args[1] :
+        writeLog(LOG_SERIAL_ERROR, "Serial Resp Mismatch: " + str(command) + " " + args[0] + " " + str(_Sequence) + " " + args[1])
     else :
         Steer      = int(args[2])
         Speed      = int(args[3])

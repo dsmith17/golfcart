@@ -3,7 +3,7 @@ import GPS
 import Arduino
 import Server
 
-url = 'http://157.182.184.52/~agc/command.php'
+url = 'http://157.182.184.52/~student1/command.php'
 # GPS_Port = 'COM17'
 GPS_Port = '/dev/ttyUSB0'
 # Arduino_Port = 'COM6'
