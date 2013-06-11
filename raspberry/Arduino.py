@@ -10,12 +10,13 @@ Connected = False
 
 # status variables
 Speed = 0
+Speed_Start = 1200
 Steer = 0
 Direction = 0
 Brake = 0
 Steer_Mode = 0
 Steer_Step = 45
-Speed_Step = 1000
+Speed_Step = 500
 
 _Sequence = 0
 _Port = ''
@@ -127,7 +128,10 @@ def Execute(command) :
         Steer -= Steer_Step
         _serial_cmd(_Commands["steer"], Steer)
     elif command[1] == 'up' :
-        Speed += Speed_Step
+	    if(Speed < Speed_First):
+		    Speed = Speed_First
+		else:
+            Speed += Speed_Step
         _serial_cmd(_Commands["speed"], Speed)
     elif command[1] == 'down' :
         Speed -= Speed_Step
@@ -142,13 +146,13 @@ def Execute(command) :
     elif command[1] == 'reset' :
         _cmd_reset()
     elif command[1] == 'change_direction' :
-		if(Direction == 0)
-			Direction = 1
-		else
-			Direction = 0
-		Speed = 0
-		_serial_cmd(_Commands["speed"], Speed)
-		_serial_cmd(_Commands["dir", Direction)
+	    if Direction == 0 :
+	        Direction = 1
+	    else :
+	        Direction = 0
+	    Speed = 0
+	    _serial_cmd(_Commands["speed"], Speed)
+	    _serial_cmd(_Commands["dir"], Direction)
     else :
         writeLog(LOG_ERROR, 'Unknown command: ' + str(command))
     

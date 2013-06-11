@@ -26,8 +26,8 @@
 #define BRAKE_ON_PIN    38 //pin 2
 #define BRAKE_OFF_PIN   39 //pin 3
 #define BRAKE_PIN	8
-#define BRAKE_RELEASE   1000
-#define BRAKE_APPLY     2000
+#define BRAKE_RELEASE   2000
+#define BRAKE_APPLY     1000
 
 #define ACCEL_UNIT 	100
 #define ACCEL_MIN	1000
@@ -502,14 +502,14 @@ void Stop()
   }
   
   sprintf(response_buff, "%d,0", seq);
-  cmdMessenger.sendCmd(kACCEL,response_buff);
+  cmdMessenger.sendCmd(kSTOP,response_buff);
   
   if(val == 1)
     applyBrake();
   else
     releaseBrake();
     
-  //cmdMessenger.sendCmd(kACK,"I got Stop");
+  cmdMessenger.sendCmd(kACK,"I got Stop");
   //stopAll();
 }
 
@@ -539,14 +539,14 @@ void brakePulse()
 {
   brake_on_state = digitalRead(BRAKE_ON_PIN);
   brake_off_state = digitalRead(BRAKE_OFF_PIN);
-  
-  if(brake_off_state == 1 && brake_status == 0)
+  return;
+  if(brake_off_state == 0 && brake_status == 0)
   {
     brake.writeMicroseconds(1500);
     brake_set = true;
     brake_status = 2;
   }
-  else if(brake_on_state == 1 && brake_status == 1)
+  else if(brake_on_state == 0 && brake_status == 1)
   {
     brake.writeMicroseconds(1500);
     brake_set = true;
