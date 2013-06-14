@@ -49,7 +49,7 @@ volatile double steeringAngle;
 volatile boolean inter_1_state;
 volatile boolean inter_2_state;
 volatile boolean inter_g_state;
-volatile boolean activeSteer = false;
+volatile boolean activeSteer = false; // 0=active, 1=passive
 volatile int steerState = 0; // 1=left, 0=stop, -1=right
 int steer_mode = 1500; // the value that is sent to the motor controller
 int old_steer_mode = 1500;
@@ -274,14 +274,14 @@ void stopSteering()
 // When in active steer state the steering will try and keep the set angle
 void setActiveSteer()
 {
-  activeSteer = 1;
+  activeSteer = true;
 }
 
 // When in Passive state the steering will set the steering angle then 
 // release control
 void setPassiveSteer()
 {
-  activeSteer = 0;
+  activeSteer = false;
 }
 
 //steer_inter_1 is called when ever the opical encoder inits a interupt
@@ -332,7 +332,7 @@ void steer_inter_2()
   //cmdMessenger.sendCmd(kACK,"The steer angle is: %d",steeringAngle);
 }   
 
-void steerMode()
+void steerMode() 
 {
   int seq, val;
   
@@ -573,7 +573,7 @@ void Status()
      dir = 1;
      
   sprintf(response_buff, "%d,%d,%d,%d,%d,%d,0", 
-         seq, (int)steeringAngle, currentSpeed, dir, brake_status, 0);
+         seq, (int)steeringAngle, currentSpeed, dir, brake_status, activeSteer);
   cmdMessenger.sendCmd(kSTATUS,response_buff);
 }
 

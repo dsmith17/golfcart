@@ -13,7 +13,10 @@ def read(path) :
 
     try :
         _Script = open(path, 'r')
-        Auto_mode = True            
+        Auto_mode = True
+        command[1] = 'steer mode'
+        command[2] = 1
+        Arduino.Execute(command)
     else :
 
 def Check() :
