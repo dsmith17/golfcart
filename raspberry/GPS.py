@@ -2,6 +2,7 @@ import io
 import time
 import serial #Has to be installed from pyserial.sourceforge.net/
 from log import *
+from math import radians, cos, sin, asin, sqrt, tan, log, pi, degrees
 
 Connected = False
 _Port = ''
@@ -23,6 +24,28 @@ Direction = 0.0
 Speed = 0.0
 Time = 0.0
 _Buffer = ' '
+
+def haversine(lon1, lat1, lon2, lat2) :
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    km = 6367 * c
+    return km
+
+def bearing(lon1, lat1, lon2, lat2) :
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    dlon = lon2 - lon1
+    dPhi = log(tan(lat2/2.0 + pi/4.0)/tan(lat/2.0 + pi/4.0))
+    if abs(dlon) > pi :
+        dlon = -(2.0 * pi - dlon)
+    else :
+        dlon = (2.0 * pi + dlon)
+
+    return (degrees(atan2(dlon, dPhi)) + 360.0) % 360.0
+    
 
 def _valid_msg(msg) :
   try:
