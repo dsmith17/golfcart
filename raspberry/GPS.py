@@ -2,7 +2,7 @@ import io
 import time
 import serial #Has to be installed from pyserial.sourceforge.net/
 from log import *
-from math import radians, cos, sin, asin, sqrt, tan, log, pi, degrees
+from math import radians, degrees, cos, sin, asin, sqrt, tan, log, pi, degrees, atan2
 
 Connected = False
 _Port = ''
@@ -20,32 +20,79 @@ def open(port) :
 
 Latitude = 0.0
 Longitude = 0.0
+old_Latitude = 0.0
+old_Longitude = 0.0
 Direction = 0.0
 Speed = 0.0
 Time = 0.0
 _Buffer = ' '
 
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    
+    # In kilometers
+    dLat = radians(lat2 - lat1)
+    dLon = radians(lon2 - lon1)
+    lat1 = radians(lat1)
+    lat2 = radians(lat2)
+
+    a = sin(dLat / 2) * sin(dLat / 2) + sin(dLon / 2) * sin(dLon / 2) * cos(lat1) * cos(lat2)
+    c = 2 * asin(sqrt(a))
+    return R * c * 3280.8399
+
+'''
+def haversine(lon1, lat1, lon2, lat2) :
+    lon1 = radians(lon1)
+    lat1 = radians(lat1)
+    lon2 = radians(lon2)
+    lat2 = radians(lat2)
+
+    dLat = lat2 - lat1
+    dLon = lon2 - lon1
+
+    a = sin((dLat/2)**2 + cos(lat1) * cos(lat2) * (dLon/2)**2)
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    d = 6371 * c
+
+    return d * 3280.8399'''
+
+'''#calculates the distance between two gps coordinates returns ft
 def haversine(lon1, lat1, lon2, lat2) :
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
     dlat = lat2 - lat1
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
     c = 2 * asin(sqrt(a))
-    km = 6367 * c
-    return km
+    km = 6371 * c
+    return km * 3280.8399 '''
 
-def bearing(lon1, lat1, lon2, lat2) :
+def bearing(lat1, lon1, lat2, lon2) :
+    #lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    dLat = radians(lat2 - lat1)
+    dLon = radians(lon2 - lon1)
+    lat1 = radians(lat1)
+    lat2 = radians(lat2)
+
+    y = sin(dLon) * cos(lat2)
+    x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+    bearing = degrees(atan2(y,x))
+
+    return bearing
+
+'''
+def bearing(lat1, lon1, lat2, lon2) :
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
 
     dlon = lon2 - lon1
-    dPhi = log(tan(lat2/2.0 + pi/4.0)/tan(lat/2.0 + pi/4.0))
+    dPhi = log(tan(lat2/2.0 + pi/4.0)/tan(lat1/2.0 + pi/4.0))
     if abs(dlon) > pi :
         dlon = -(2.0 * pi - dlon)
     else :
         dlon = (2.0 * pi + dlon)
 
     return (degrees(atan2(dlon, dPhi)) + 360.0) % 360.0
-    
+'''
 
 def _valid_msg(msg) :
   try:
@@ -146,9 +193,16 @@ def Check():
     global _Port
     global Connected
     global _Buffer
+    global old_Latitude
+    global old_Longitude
+    global Latitude
+    global Longitude
 
     if not Connected :
         return
+
+    old_Latitude = Latitude
+    old_Longitude = Longitude
 
     count = _Port.inWaiting()
     if (count > 0) :

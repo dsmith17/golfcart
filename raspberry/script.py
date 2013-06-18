@@ -4,19 +4,30 @@ import Arduino
 import Server
 
 Auto_mode = False
+Moving_Forward = False
+Instruction_num = 0
+Command = [0,'',0] //index, instruction, paramater
 _Script = ''
 _file = ''
 MAX_FORWARD_FT = 999
 
+def execute_Command(instruct, parm) :
+    global Command
+
+    Command[0] = Instruction_num++
+    Command[1] = instruct
+    Command[2] = parm
+
+    Arudino.Execute(Command)
+
 def read(path) :
     global _Script
+    global Command
 
     try :
         _Script = open(path, 'r')
         Auto_mode = True
-        command[1] = 'steer mode'
-        command[2] = 1
-        Arduino.Execute(command)
+        execute_Command('steer mode', 0)
     else :
 
 def Check() :
@@ -39,6 +50,10 @@ def execute(line) :
         
     // Go forward up to MAX_FORWARD_FT ft
     elif 'Move Forward' in line :
+        if parm[1] > MAX_FORWARD_FT :
+            parm[1] = MAX_FORWARD_FT
+        Moving_Forward = True
+        execute_Command('up')
 
     // Turn to a specified compass heading
     elif 'Turn To' in line :
