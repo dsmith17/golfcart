@@ -4,12 +4,19 @@ import Arduino
 import Server
 
 Auto_mode = False
-Moving_Forward = False
+
 Instruction_num = 0
 Command = [0,'',0] //index, instruction, paramater
 _Script = ''
 _file = ''
+
 MAX_FORWARD_FT = 999
+distance_Delta = 3
+Moving_Forward = False
+start_Lat = 0.0
+start_Lon = 0.0
+current_Distance = 0.0
+end_Distance = 0
 
 def execute_Command(instruct, parm) :
     global Command
@@ -32,12 +39,33 @@ def read(path) :
 
 def Check() :
     global _Script
+    global start_Lat
+    global start_Lon
+    global current_Distance
+    global end_Distance
+    global distance_Delta
     
     if Auto_mode :
         line in _Script.readlines()
         execute(line)
+    elif Moving_Forward :
+        if GPS.old_Latitude != GPS.Latitude or GPS.old_Longitude != GPS.Longitude :
+            current_Distance = haversine(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
+            if current_Distance >= end_Distance - distance_Delta and current_Distance < end_Distance :
+                execute_Command("down", 0)
+            elif current_Distance >= end_Distance :
+                execute_Command("stop", 0)
+                Moving_Forward = False
+                Auto_mode = True
 
 def execute(line) :
+    global start_Lat
+    global start_Lon
+    global end_Distance
+    global Auto_mode
+    global Moving_Forward
+    global MAX_FORWARD_FT
+    
     parm = line.split(',')
     // Lets golfcart drift to a stop w/o brake
     if 'Soft Stop' in line :
@@ -53,7 +81,12 @@ def execute(line) :
         if parm[1] > MAX_FORWARD_FT :
             parm[1] = MAX_FORWARD_FT
         Moving_Forward = True
-        execute_Command('up')
+        execute_Command('up',0)
+        execute_Command('up',0)
+        Auto_mode = False
+        start_Lat = GPS.Latitude
+        start_Lon = GPS.Longitude
+        end_Distance = parm[1]
 
     // Turn to a specified compass heading
     elif 'Turn To' in line :

@@ -27,6 +27,7 @@ Speed = 0.0
 Time = 0.0
 _Buffer = ' '
 
+#calculates the distance between two gps coordinates returns ft
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
     
@@ -39,32 +40,6 @@ def haversine(lat1, lon1, lat2, lon2):
     a = sin(dLat / 2) * sin(dLat / 2) + sin(dLon / 2) * sin(dLon / 2) * cos(lat1) * cos(lat2)
     c = 2 * asin(sqrt(a))
     return R * c * 3280.8399
-
-'''
-def haversine(lon1, lat1, lon2, lat2) :
-    lon1 = radians(lon1)
-    lat1 = radians(lat1)
-    lon2 = radians(lon2)
-    lat2 = radians(lat2)
-
-    dLat = lat2 - lat1
-    dLon = lon2 - lon1
-
-    a = sin((dLat/2)**2 + cos(lat1) * cos(lat2) * (dLon/2)**2)
-    c = 2 * atan2(sqrt(a), sqrt(1-a))
-    d = 6371 * c
-
-    return d * 3280.8399'''
-
-'''#calculates the distance between two gps coordinates returns ft
-def haversine(lon1, lat1, lon2, lat2) :
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
-    km = 6371 * c
-    return km * 3280.8399 '''
 
 def bearing(lat1, lon1, lat2, lon2) :
     #lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
@@ -79,20 +54,6 @@ def bearing(lat1, lon1, lat2, lon2) :
     bearing = degrees(atan2(y,x))
 
     return bearing
-
-'''
-def bearing(lat1, lon1, lat2, lon2) :
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-
-    dlon = lon2 - lon1
-    dPhi = log(tan(lat2/2.0 + pi/4.0)/tan(lat1/2.0 + pi/4.0))
-    if abs(dlon) > pi :
-        dlon = -(2.0 * pi - dlon)
-    else :
-        dlon = (2.0 * pi + dlon)
-
-    return (degrees(atan2(dlon, dPhi)) + 360.0) % 360.0
-'''
 
 def _valid_msg(msg) :
   try:

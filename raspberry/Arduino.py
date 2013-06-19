@@ -17,6 +17,7 @@ Brake = 0
 Steer_Mode = 0 //
 Steer_Step = 45
 Speed_Step = 500
+Speed_First = 1200
 
 _Sequence = 0
 _Port = ''
@@ -114,6 +115,7 @@ def Execute(command) :
     global Steer_Step
     global Speed
     global Speed_Step
+    global Speed_First
     global _Commands
     global _Sequence
     global Direction
