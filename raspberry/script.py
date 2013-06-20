@@ -37,6 +37,11 @@ def read(path) :
         execute_Command('steer mode', 0)
     else :
 
+def start_auto(file_buf)
+        _Script = file_buf
+        Auto_mode = True
+        execute_Command('steer mode', 0)
+
 def Check() :
     global _Script
     global start_Lat
@@ -47,7 +52,8 @@ def Check() :
     
     if Auto_mode :
         line in _Script.readlines()
-        execute(line)
+        if line != '' :
+            execute(line)
     elif Moving_Forward :
         if GPS.old_Latitude != GPS.Latitude or GPS.old_Longitude != GPS.Longitude :
             current_Distance = haversine(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
@@ -65,33 +71,37 @@ def execute(line) :
     global Auto_mode
     global Moving_Forward
     global MAX_FORWARD_FT
-    
+
+    #Format line
+    line = line.lstrip(';')    
     parm = line.split(',')
-    // Lets golfcart drift to a stop w/o brake
+    
+    # Lets golfcart drift to a stop w/o brake
     if 'Soft Stop' in line :
         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
         
-    // Applies brake to stop
+    # Applies brake to stop
     elif 'Hard Stop' in line :
         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
         Arduino._serial_cmd(Arduino._Commands["brake"], 1)
         
-    // Go forward up to MAX_FORWARD_FT ft
+    # Go forward up to MAX_FORWARD_FT ft
     elif 'Move Forward' in line :
-        if parm[1] > MAX_FORWARD_FT :
-            parm[1] = MAX_FORWARD_FT
+        parm1 = int(parm[1])
+        if parm1 > MAX_FORWARD_FT :
+            parm1 = MAX_FORWARD_FT
         Moving_Forward = True
         execute_Command('up',0)
         execute_Command('up',0)
         Auto_mode = False
         start_Lat = GPS.Latitude
         start_Lon = GPS.Longitude
-        end_Distance = parm[1]
+        end_Distance = parm1
 
-    // Turn to a specified compass heading
+    # Turn to a specified compass heading
     elif 'Turn To' in line :
 
-    // Turn a number of degrees
+    # Turn a number of degrees
     elif 'Turn Delta' in line :
 
     elif 'Follow Heading' in line :

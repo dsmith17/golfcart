@@ -7,9 +7,11 @@ import GPS
 import Arduino
 
 _URL = 'http://157.182.184.52/~student1/command.php'
+_Script = 'http://157.182.184.52/~student1/script.txt'
 _Pings = 0
 _TimeLastPing = 0
 _Sequence = 0
+_Local_Script = True
 
 # session used to communicate with server
 _Session = requests.session()
@@ -58,6 +60,19 @@ def _is_int(val) :
     except :
         return False
 
+def Get_Script(_Script) :
+    global _Session
+
+    try :
+        script = _Session.get(_Script, timeout=1.0).text
+        writeLog(LOG_PING_SERVER, 'Got new script')
+    except requests.HTTPError as err :
+        command = str(_Sequence) + ' HTTP_error'
+        writeLog(LOG_ERROR, 'HTTP Error: ' + str(err))
+    except requests.Timeout as err :
+        command = str(_Sequence) + ' HTTP_timeout'
+        writeLog(LOG_ERROR, 'HTTP timeout: ' + str(err))
+    return script
 
 def Ping(sequence_only=False):
     global _Sequence
@@ -101,7 +116,10 @@ def Ping(sequence_only=False):
             writeLog(LOG_SEQ_ERROR, 'Missed sequence number: ' + str(_Sequence) + ' ' + str(new_seq))
         _Sequence = new_seq
         writeLog(LOG_NEW_COMMAND, 'New command: ' + str(commandParts))
-        Arduino.Execute(commandParts)
+        if commandParts[1] == 'script' :
+            script.start_auto(Get_Script(_Script))
+        else :
+            Arduino.Execute(commandParts)
         Arduino.Get_Status()
     elif commandParts[1] == 'reset' :
         _cmd_reset()
