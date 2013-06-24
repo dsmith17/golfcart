@@ -12,6 +12,7 @@ Connected = False
 Speed = 0
 Speed_Start = 1200
 Steer = 0
+Steer_current = 0
 Direction = 0
 Brake = 0
 Steer_Mode = 0 
@@ -80,7 +81,7 @@ def Get_Status() :
     global _Port
     global _Sequence
     global Speed
-    global Steer
+    global Steer_current
     global Direction
     global Brake
     global Steer_Mode
@@ -99,12 +100,12 @@ def Get_Status() :
     elif str(_ARDUINO_STATUS) != args[0] or str(_Sequence) != args[1] :
         writeLog(LOG_SERIAL_ERROR, "Serial Resp Mismatch: " + str(command) + " " + args[0] + " " + str(_Sequence) + " " + args[1])
     else :
-        Steer      = int(args[2])
-        Speed      = int(args[3])
-        Direction  = int(args[4])
-        Brake      = int(args[5])
-        Steer_Mode = int(args[6])
-    _timeLastStatus = time.time()
+        Steer_current       = int(args[2])
+        Speed               = int(args[3])
+        Direction           = int(args[4])
+        Brake               = int(args[5])
+        Steer_Mode          = int(args[6])
+    _timeLastStatus         = time.time()
 def _cmd_reset() :
     global _Sequence
     writeLog(LOG_DETAILS, 'reset Sequence number')

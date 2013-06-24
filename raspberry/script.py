@@ -44,9 +44,9 @@ def read(path) :
     execute_Command('steer mode', 0)
 
 def start_auto(file_buf) :
-        _Script = file_buf
-        Auto_mode = True
-        execute_Command('steer mode', 0)
+    _Script = file_buf
+    Auto_mode = True
+    execute_Command('steer mode', 0)
 
 def Check() :
     global _Script
@@ -90,8 +90,10 @@ def execute(line) :
     global MAX_FORWARD_FT
 
     #Format line
-    line = line.lstrip(';')    
+    line = line.rstrip(';')
+    #print(line)
     parm = line.split(',')
+    #print(parm)
     
     # Lets golfcart drift to a stop w/o brake
     if 'Soft Stop' in line :

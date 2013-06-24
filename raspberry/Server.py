@@ -31,7 +31,7 @@ def open(url) :
     Ping(sequence_only=True)
     
 def _formatUrl():
-    formattedUrl = _URL + '?speed='+str(Arduino.Speed) + '&steer='+str(Arduino.Steer)
+    formattedUrl = _URL + '?speed='+str(Arduino.Speed) + '&steer='+str(Arduino.Steer_current)
     if Arduino.Direction :
         formattedUrl += '&direction=BACK'
     else :
