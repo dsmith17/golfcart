@@ -5,6 +5,7 @@ import time
 from log import *
 import GPS
 import Arduino
+import script
 
 _URL = 'http://157.182.184.52/~student1/command.php'
 _Script = 'http://157.182.184.52/~student1/script.txt'

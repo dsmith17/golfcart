@@ -14,7 +14,7 @@ Speed_Start = 1200
 Steer = 0
 Direction = 0
 Brake = 0
-Steer_Mode = 0 //
+Steer_Mode = 0 
 Steer_Step = 45
 Speed_Step = 500
 Speed_First = 1200
@@ -130,9 +130,9 @@ def Execute(command) :
         Steer -= Steer_Step
         _serial_cmd(_Commands["steer"], Steer)
     elif command[1] == 'up' :
-	    if(Speed < Speed_First):
-		    Speed = Speed_First
-		else:
+        if(Speed < Speed_First):
+            Speed = Speed_First
+        else:
             Speed += Speed_Step
         _serial_cmd(_Commands["speed"], Speed)
     elif command[1] == 'down' :

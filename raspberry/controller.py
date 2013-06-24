@@ -34,7 +34,7 @@ def  poll():
 
 # Ping the server once to get current Sequence
 writeLog(LOG_ALWAYS, 'AGC Startup')
-Init_mode()
+Init_Mode()
 Arduino.open(Arduino_Port)
 GPS.open(GPS_Port)
 #script.read(Script_Path)
