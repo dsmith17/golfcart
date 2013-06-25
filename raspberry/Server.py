@@ -8,7 +8,7 @@ import Arduino
 import script
 
 _URL = 'http://157.182.184.52/~student1/command.php'
-_Script = 'http://157.182.184.52/~student1/script.txt'
+_Script = 'http://157.182.184.52/~student1/data/script.txt'
 _Pings = 0
 _TimeLastPing = 0
 _Sequence = 0
@@ -118,7 +118,10 @@ def Ping(sequence_only=False):
         _Sequence = new_seq
         writeLog(LOG_NEW_COMMAND, 'New command: ' + str(commandParts))
         if commandParts[1] == 'script' :
-            script.start_auto(Get_Script(_Script))
+            #da_script = Get_Script(_Script)
+            #writeLog(LOG_SERIAL_IN, 'Got script command passing :\n' + da_script)
+            #script.start_auto(da_script)
+            script.start_auto('Move Forward,30;')
         else :
             Arduino.Execute(commandParts)
         Arduino.Get_Status()

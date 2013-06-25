@@ -44,8 +44,13 @@ def read(path) :
     execute_Command('steer mode', 0)
 
 def start_auto(file_buf) :
+    global _Script
+    global Command
+    global Auto_mode
+    
     _Script = file_buf
     Auto_mode = True
+    writeLog(LOG_SERIAL_IN, 'This is the file :\n' + _Script)
     execute_Command('steer mode', 0)
 
 def Check() :
@@ -61,22 +66,28 @@ def Check() :
     global Auto_mode
     
     if Auto_mode :
-        line in _Script.readlines()
+        #line = _Script.readlines()
+        line = 'yes'
+        #writeLob(LOG_SERIAL_IN, 'In Auto_mode')
         if line != '' :
-            execute(line)
+            writeLog(LOG_SERIAL_IN, 'Executing script')
+            Auto_mode = False
+            execute(_Script)
         else :
+            writeLog(LOG_SERIAL_IN, 'Didn\'t execute script')
             Auto_mode = False
             execute_Commmand('steer mode', 1)
     else :
         if Moving_Forward :
-            if GPS.old_Latitude != GPS.Latitude or GPS.old_Longitude != GPS.Longitude :
-                current_Distance = haversine(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
-                if current_Distance >= end_Distance - delta_Distance and current_Distance < end_Distance :
-                    execute_Command("down", 0)
-                elif current_Distance >= end_Distance :
-                    execute_Command("stop", 0)
-                    Moving_Forward = False
-                    Auto_mode = True
+            #if GPS.old_Latitude != GPS.Latitude or GPS.old_Longitude != GPS.Longitude :
+            #writeLog(LOG_SERIAL_IN, 'Old_lat, lat, Old.Long, Long : ' + GPS.old_Latitude + ' ,' + GPS.Latitude + ' ,' + GPS.old_Longitude + ' ,' + GPS.Longitude)
+            current_Distance = haversine(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
+            if current_Distance >= end_Distance - delta_Distance and current_Distance < end_Distance :
+                Arduino._serial_cmd(Arduino._Commands["speed"], 1500)
+            elif current_Distance >= end_Distance :
+                Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                Moving_Forward = False
+                Auto_mode = True
 #        if Turning_To :
             
 #        if Turning_Delta :
@@ -94,6 +105,7 @@ def execute(line) :
     #print(line)
     parm = line.split(',')
     #print(parm)
+    writeLog(LOG_SERIAL_IN, parm)
     
     # Lets golfcart drift to a stop w/o brake
     if 'Soft Stop' in line :
@@ -105,13 +117,15 @@ def execute(line) :
         Arduino._serial_cmd(Arduino._Commands["brake"], 1)
         
     # Go forward up to MAX_FORWARD_FT ft
-    elif 'Move Forward' in line :
+    elif 'Move Forward' == parm[0] :
+        print('Got Move Forward')
         parm1 = int(parm[1])
         if parm1 > MAX_FORWARD_FT :
             parm1 = MAX_FORWARD_FT
         Moving_Forward = True
-        execute_Command('up',0)
-        execute_Command('up',0)
+#        execute_Command('up',0)
+#        execute_Command('up',0)
+        Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
         Auto_mode = False
         start_Lat = GPS.Latitude
         start_Lon = GPS.Longitude
