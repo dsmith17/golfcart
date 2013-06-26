@@ -12,7 +12,7 @@ def open(port) :
     global _Port
     global Connected
     try :
-        _Port = serial.Serial(port, 4800, timeout=0)
+        _Port = serial.Serial(port, 57600, timeout=0)
         Connected = True
         writeLog(LOG_DETAILS, 'Connected to GPS: ' + str(port))
     except Exception as err :

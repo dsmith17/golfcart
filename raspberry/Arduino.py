@@ -68,6 +68,9 @@ def _serial_cmd(cmd, param) :
     global _Port
     global _Sequence
 
+    if not Connected :
+        return
+ 
     _Sequence = _Sequence + 1
     command = str(cmd) + ', ' + str(_Sequence) + ', ' + str(param) + ';'
     _Port.write(command)
