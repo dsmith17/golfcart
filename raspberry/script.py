@@ -71,6 +71,7 @@ def Check() :
     global Turning_Delta
     global Auto_mode
     global Turn_Delta_Angle
+    global Turn_To_Angle
     global _degrees
     global end_bearing
     global bearing
@@ -106,10 +107,32 @@ def Check() :
                 Moving_Forward = False
                 Auto_mode = True
                 _Script = ''
-#        if Turning_To :
-            
+        if Turning_To :
+            if Moving_Forward == False :
+                bearing = GPS.bearing(start_lat, start_Lon, GPS.Latitude, GPS.Longitude)
+                if Turn_To_Angle > bearing :
+                    if Turn_To_Angle - bearing > 180 : #Turn left
+                        #bearing = -1*((360 - Turn_To_Angle) + bearing)
+                        Arduino._serial_cmd(Arduino.Commands["steer"], -1*_degrees)
+                    else : #Turn right
+                        Arduino._serial_cmd(Arduino.Commands["steer"], _degrees)
+                        #bearing = Turn_To_Angle - bearing
+                else :
+                    if bearing - Turn_To_Angle > 180 : #Turn right
+                        Arduino._serial_cmd(Arduino.Commands["steer"], _degrees)
+                        #bearing = (360 - bearing) + Turn_To_Angle
+                    else : #Turn Left
+                        Arduino._serial_cmd(Arduino.Commands["steer"], -1*_degrees)
+                        #bearing = Turn_To_Angle - bearing
+                Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
+                Turning_Delta_Init = False
+                old_latitude = GPS.Latitude
+                old_longitude = GPS.Longitude
+                end_bearing = Turn_To_Angle
+                Turning_Delta = True
+                Turning_To = False
         if Turning_Delta :
-            if Moveing_Forward == False and Turning_Delta_Init == True :
+            if Moving_Forward == False and Turning_Delta_Init == True :
                 bearing = GPS.bearing(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
                 end_bearing = Turn_Delta_Angle + bearing
                 if Turn_Delta_Angle > 0 :
@@ -153,6 +176,8 @@ def execute(line) :
     global Turning_Delta
     global Turning_Delta_Init
     global Turn_Delta_Angle
+    global Turning_To
+    global Turn_To_Angle
 
     #Format line
     line = line.rstrip(';')
@@ -187,7 +212,11 @@ def execute(line) :
 
     # Turn to a specified compass heading
     elif 'Turn To' == parm[0] :
+        print('Got Turn To')
         Turning_To = True
+        parm1 = int(parm[1])
+        Turn_To_Angle = parm1
+        execute('Moving Forward,5;')
 
     elif 'Turn Delta' == parm[0] :
         print('Got Turn Delta')
