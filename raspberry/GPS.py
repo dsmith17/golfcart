@@ -26,6 +26,7 @@ Direction = 0.0
 Speed = 0.0
 Time = 0.0
 _Buffer = ' '
+Bearing = 0.0
 
 #calculates the distance between two gps coordinates returns ft
 def haversine(lat1, lon1, lat2, lon2):
@@ -53,7 +54,7 @@ def bearing(lat1, lon1, lat2, lon2) :
     x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
     bearing = degrees(atan2(y,x))
 
-    writeLog(LOG_DETAILS, 'This is a bearing : ' + bearing)
+    #writeLog(LOG_DETAILS, 'This is a bearing : ' + repr(bearing))
     return bearing
 
 def _valid_msg(msg) :
@@ -82,7 +83,10 @@ def _valid_msg(msg) :
 
 def _set_time(val) :
     global Time
-    new_time = float(val)
+    try :
+        new_time = float(val)
+    except ValueError :
+        print('Got a bad float')
     if new_time != Time :
         Time = new_time
 #        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(Time))
@@ -90,6 +94,9 @@ def _set_time(val) :
 def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
     global Latitude
     global Longitude
+    global old_Latitude
+    global old_Longitude
+    global Bearing
     
     if len(lat) == 0 or len(longt) == 0 :
         return
@@ -103,7 +110,10 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
         new_long = -new_long
         
     if new_lat != Latitude or new_long != Longitude :
-        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
+        #writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
+    Bearing = bearing(Latitude,Longitude,new_lat,new_long)
+    old_Latitude = Latitude
+    olg_Longitude = Longitude
     Latitude = new_lat
     Longitude = new_long
     
@@ -113,7 +123,7 @@ def _set_speed(val) :
         new_speed = float(val)
 
         if new_speed != Speed :
-            writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
+            #writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
             Speed = new_speed
 def _set_dir(val) :
     global Direction
@@ -121,7 +131,7 @@ def _set_dir(val) :
         new_dir = float(val)
         if new_dir != Direction :
             Direction = new_dir
-            writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
+            #writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
 
 def _GPGGA(fields):
     _set_time(fields[1])
@@ -162,9 +172,6 @@ def Check():
 
     if not Connected :
         return
-
-    old_Latitude = Latitude
-    old_Longitude = Longitude
 
     count = _Port.inWaiting()
     if (count > 0) :

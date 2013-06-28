@@ -21,10 +21,11 @@ def Init_Mode() :
     return_code = subprocess.call(['ping','-c','5','157.182.184.52'])
     if return_code == 1 :
         Script_mode = True
+        script.init_dir()
         script.read(Script_Path)
     else :
         Server.open(url)
-    subprocess.call(['python','watchdog.py'])
+    #subprocess.call(['python','watchdog.py'])
 
 def  poll():
     if Script_mode == False:

@@ -13,10 +13,13 @@ start_Lat = 0.0
 start_Lon = 0.0
 
 MAX_FORWARD_FT = 999
-delta_Distance = 3
+delta_Distance = 1
 Moving_Forward = False
 current_Distance = 0.0
 end_Distance = 0
+
+old_latitude = 0.0
+old_longitude = 0.0
 
 Turning_To = False
 Turning_Delta = False
@@ -29,6 +32,7 @@ _degrees = 500*(1000/360)
 end_bearing = 0
 bearing = 0
 old_bearing = 0
+bearing_distance = 2
 cur_turn_angle = 0
 
 Delaying = False
@@ -37,7 +41,10 @@ delay_length = 0
 
 Hard_Stopping = False
 
-
+Init_Execute = False
+init_start_Lat = 0.0
+init_start_Lon = 0.0
+init_bearing = 0.0
 
 def execute_Command(instruct, parm) :
     global Command
@@ -70,34 +77,23 @@ def start_auto(file_buf) :
 
 def Check() :
     global _Script
-    global start_Lat
-    global start_Lon
-    global current_Distance
-    global end_Distance
-    global delta_Distance
+    global start_Lat, start_Lon
+    global current_Distance, end_Distance, delta_Distance
     global Moving_Forward
-    global Turning_To
-    global Turning_Delta
+    global Turning_To, Turn_To_Angle
+    global Turning_Delta, Turn_Delta_Angle, Turning_Delta_Init
     global Auto_mode
-    global Turn_Delta_Angle
-    global Turning_Delta_Init
-    global Turn_To_Angle
     global _degrees
-    global end_bearing
-    global bearing
-    global old_bearing
-    global prec_Turning
-    global delta_Turning
-    global old_latitude
-    global old_longitude
-    global Delaying
-    global delay_time
-    global delay_length
+    global bearing, end_bearing, old_bearing, bearing_distance
+    global prec_Turning, delta_Turning, cur_turn_angle
+    global old_latitude, old_longitude
+    global Delaying, delay_time, delay_length
     global Hard_Stopping
-    global cur_turn_angle
+    global Init_Execute, init_start_Lat, init_start_Lon, init_bearing
+
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
-    if Auto_mode :
+    if Auto_mode and Init_Execute != True:
         #line = _Script.readlines()
         line = 'yes'
         #writeLob(LOG_SERIAL_IN, 'In Auto_mode')
@@ -110,6 +106,13 @@ def Check() :
             Auto_mode = False
             execute_Commmand('steer mode', 1)
     else :
+        if Init_Execute :
+           if Moving_Forward == False:
+               init_bearing = GPS.bearing(init_start_Lat, init_start_Lon, GPS.Latitude, GPS.Longitude)
+               writeLog(LOG_GPS_POS, 'Initial bearing is : ' + repr(init_bearing))
+               Init_Execute = False
+               old_latitude = GPS.Latitude
+               old_longitude = GPS.Longitude
         if Moving_Forward :
             #if GPS.old_Latitude != GPS.Latitude or GPS.old_Longitude != GPS.Longitude :
             #writeLog(LOG_SERIAL_IN, 'Old_lat, lat, Old.Long, Long : ' + GPS.old_Latitude + ' ,' + GPS.Latitude + ' ,' + GPS.old_Longitude + ' ,' + GPS.Longitude)
@@ -123,10 +126,10 @@ def Check() :
                 Moving_Forward = False
                 Auto_mode = True
                 _Script = ''
+                bearing = GPS.bearing(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
         if Turning_To :
             if Moving_Forward == False :
-                bearing = GPS.bearing(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
-                if Turn_To_Angle > bearing :
+                if Turn_To_Angle > init_bearing :
                     if Turn_To_Angle - bearing > 180 : #Turn left
                         #bearing = -1*((360 - Turn_To_Angle) + bearing)
                         Arduino._serial_cmd(Arduino._Commands["steer"], -1*_degrees)
@@ -149,30 +152,30 @@ def Check() :
                 Turning_To = False
         if Turning_Delta :
             if Moving_Forward == False and Turning_Delta_Init == True :
-                bearing = GPS.bearing(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
-                end_bearing = Turn_Delta_Angle + bearing
-                print('This is a bearing : ' + bearing)
+                end_bearing = Turn_Delta_Angle + init_bearing
+                #print('This is a bearing : ' + bearing)
                 if Turn_Delta_Angle > 0 :
                     Arduino._serial_cmd(Arduino._Commands["steer"], _degrees)
                 else :
                     Arduino._serial_cmd(Arduino._Commands["steer"], -1*_degrees)
                 Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
                 Turning_Delta_Init = False
+                print('This is the Init_Delta')
+                #execute('Delay,1;')
+            elif Moving_Forward == False and Turning_Delta_Init == False and Delaying == False :
+                if GPS.haversine(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude) < bearing_distance :
+                    return
+                bearing = GPS.bearing(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude)
+                writeLog(LOG_GPS_POS, 'New Bearing: ' + repr(bearing))
                 old_latitude = GPS.Latitude
                 old_longitude = GPS.Longitude
-            elif Moving_Forward == False and Turning_Delta_Init == False :
-                old_bearing = bearing
-                bearing = GPS.bearing(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude)
-                old_latitude = GPS.Latitude
-                old_longitude = GPS.Longitude   
-
                 #if bearing < end_bearing : #on the right side of bearing
                 if Turn_Delta_Angle > 0 : #Turning right
                     if bearing < old_bearing :
                         cur_turn_angle += (360 + bearing) - old_bearing
                     else :
                         cur_turn_angle += bearing - old_bearing
-                    if Turn_Delta_Angle < cur_turn_angle : #stop turning
+                    if Turn_Delta_Angle + delta_Turning < cur_turn_angle : #stop turning
                         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
                         Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                         Turning_Delta = False
@@ -180,6 +183,7 @@ def Check() :
                         _Script = ''
                         cur_turn_angle = 0
                         Turn_Delta_Angle = 0
+                        init_bearing = bearing
                     elif Turn_Delta_Angle - cur_turn_angle < delta_Turning :
                         Arduino._serial_cmd(Arduino._Commands["speed"], 1500)
                 #elif bearing > end_bearing : #on the left side of bearing
@@ -188,7 +192,7 @@ def Check() :
                         cur_turn_angle += bearing - (360 + old_bearing)
                     else :
                         cur_turn_angle += bearing - old_bearing
-                    if cur_turn_angle < Turn_Delta_Angle : #stop turning
+                    if cur_turn_angle < Turn_Delta_Angle - delta_Turning: #stop turning
                         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
                         Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                         Turning_Delta = False
@@ -196,6 +200,7 @@ def Check() :
                         _Script = ''
                         cur_turn_angle = 0
                         Turn_Delta_Angle = 0
+                        init_bearing = bearing
                     elif Turn_Delta_Angle - cur_turn_angle < delta_Turning : #slow
                         Arduino._serial_cmd(Arduino._Commands["speed"], 1500)
         if Hard_Stopping :
@@ -205,7 +210,17 @@ def Check() :
         if Delaying :
             if time.time() - delay_start > delay_length :
                 Delaying = False
-                    
+
+def init_dir() :
+    global Init_Execute, init_start_Lat, init_start_Lon
+
+    Init_Mode = True
+    init_start_Lat = GPS.Latitude
+    init_start_Lon = GPS.Longitude
+    Init_Execute = True
+    execute('Move Forward,10;')
+    writeLog(LOG_GPS_POS, 'Init is done')
+    
 def execute(line) :
     global start_Lat
     global start_Lon
@@ -224,6 +239,7 @@ def execute(line) :
     global Hard_Stopping
 
     #Format line
+    line = line.strip();
     line = line.rstrip(';')
     #print(line)
     parm = line.split(',')
@@ -264,7 +280,7 @@ def execute(line) :
         Turning_To = True
         parm1 = int(parm[1])
         Turn_To_Angle = parm1
-        execute('Moving Forward,5;')
+        #execute('Moving Forward,10;')
 
     # Turn a number of degrees
     elif 'Turn Delta' == parm[0] :
@@ -273,7 +289,7 @@ def execute(line) :
         Turning_Delta = True
         Turning_Delta_Init = True
         Turn_Delta_Angle = parm1
-        execute('Moving Forward,5;')
+        #execute('Moving Forward,10;')
         
 
 #    elif 'Follow Heading' in line :
