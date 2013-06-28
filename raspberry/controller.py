@@ -1,3 +1,4 @@
+
 from log import *
 import GPS
 import Arduino
@@ -23,6 +24,7 @@ def Init_Mode() :
         script.read(Script_Path)
     else :
         Server.open(url)
+    subprocess.call(['python','watchdog.py'])
 
 def  poll():
     if Script_mode == False:

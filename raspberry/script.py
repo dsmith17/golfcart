@@ -33,6 +33,8 @@ Delaying = False
 delay_time = 0
 delay_length = 0
 
+Hard_Stopping = False
+
 
 
 def execute_Command(instruct, parm) :
@@ -88,6 +90,7 @@ def Check() :
     global Delaying
     global delay_time
     global delay_length
+    global Hard_Stopping
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
     if Auto_mode :
@@ -154,31 +157,46 @@ def Check() :
                 old_latitude = GPS.Latitude
                 old_longitude = GPS.Longitude
             elif Moving_Forward == False and Turning_Delta_Init == False :
+                old_bearing = bearing
                 bearing = GPS.bearing(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude)
                 old_latitude = GPS.Latitude
-                old_longitude = GPS.Longitude
+                old_longitude = GPS.Longitude   
 
                 #if bearing < end_bearing : #on the right side of bearing
                 if Turn_Delta_Angle > 0 : #Turning right
-                    if bearing < 
-		    if end_bearing - bearing < prec_Turning : #stop turning
+                    if bearing < old_bearing :
+                        cur_turn_angle += (360 + bearing) - old_bearing
+                    else :
+                        cur_turn_angle += bearing - old_bearing
+                    if Turn_Delta_Angle < cur_turn_angle : #stop turning
                         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
                         Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                         Turning_Delta = False
                         Auto_mode = True
                         _Script = ''
-                    elif end_bearing - bearing < delta_Turning :
+                    elif Turn_Delta_Angle - cur_turn_angle < delta_Turning :
                         Arduino._serial_cmd(Arduino._Commands["speed"], 1500)
                 #elif bearing > end_bearing : #on the left side of bearing
                 else : #Turning left
-                    if bearing - end_bearing < prec_Turning : #stop turning
+                    if bearing > old_bearing :
+                        cur_turn_angle += bearing - (360 + old_bearing)
+                    else :
+                        cur_turn_angle += bearing - old_bearing
+                    if cur_turn_angle < Turn_Delta_Angle : #stop turning
                         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
                         Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                         Turning_Delta = False
                         Auto_mode = True
                         _Script = ''
-                    elif bearing - end_bearing < delta_Turning : #slow
+                    elif Turn_Delta_Angle - cur_turn_angle < delta_Turning : #slow
                         Arduino._serial_cmd(Arduino._Commands["speed"], 1500)
+        if Hard_Stopping :
+            if not Delaying :
+                Arduino._serial_cmd(Arduino._Commands["brake"], 0)
+                Hard_Stopping = False
+        if Delaying :
+            if time.time() - delay_start > delay_length :
+                Delaying = False
                     
 def execute(line) :
     global start_Lat
@@ -195,6 +213,7 @@ def execute(line) :
     global Delaying
     global delay_start
     global delay_length
+    global Hard_Stopping
 
     #Format line
     line = line.rstrip(';')
@@ -211,6 +230,10 @@ def execute(line) :
     elif 'Hard Stop' in line :
         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
         Arduino._serial_cmd(Arduino._Commands["brake"], 1)
+        Hard_Stopping = True
+        Delaying = True
+        delay_length = 20
+        delay_start = time.time()
         
     # Go forward up to MAX_FORWARD_FT ft
     elif 'Move Forward' == parm[0] :
@@ -256,5 +279,5 @@ def execute(line) :
         parm1 = int(parm[1])
         Delaying = True
         delay_length = parm1
-#        delay_start = 
+        delay_start = time.time()
     
