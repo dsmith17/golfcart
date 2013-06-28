@@ -87,6 +87,7 @@ def _set_time(val) :
         new_time = float(val)
     except ValueError :
         print('Got a bad float')
+        new_time = Time
     if new_time != Time :
         Time = new_time
 #        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(Time))
@@ -111,11 +112,12 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
         
     if new_lat != Latitude or new_long != Longitude :
         #writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
-    Bearing = bearing(Latitude,Longitude,new_lat,new_long)
-    old_Latitude = Latitude
-    olg_Longitude = Longitude
-    Latitude = new_lat
-    Longitude = new_long
+        Bearing = bearing(Latitude,Longitude,new_lat,new_long)
+        print('This is a new Bearing: ' + repr(Bearing))
+        old_Latitude = Latitude
+        old_Longitude = Longitude
+        Latitude = new_lat
+        Longitude = new_long
     
 def _set_speed(val) :
     global Speed
@@ -131,7 +133,7 @@ def _set_dir(val) :
         new_dir = float(val)
         if new_dir != Direction :
             Direction = new_dir
-            #writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
+            writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
 
 def _GPGGA(fields):
     _set_time(fields[1])

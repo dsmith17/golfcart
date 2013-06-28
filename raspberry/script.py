@@ -93,7 +93,7 @@ def Check() :
 
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
-    if Auto_mode and Init_Execute != True:
+    if Auto_mode and Init_Execute == False:
         #line = _Script.readlines()
         line = 'yes'
         #writeLob(LOG_SERIAL_IN, 'In Auto_mode')
@@ -153,6 +153,7 @@ def Check() :
         if Turning_Delta :
             if Moving_Forward == False and Turning_Delta_Init == True :
                 end_bearing = Turn_Delta_Angle + init_bearing
+                print('Initial Bearing: ' + repr(init_bearing))
                 #print('This is a bearing : ' + bearing)
                 if Turn_Delta_Angle > 0 :
                     Arduino._serial_cmd(Arduino._Commands["steer"], _degrees)
@@ -163,9 +164,10 @@ def Check() :
                 print('This is the Init_Delta')
                 #execute('Delay,1;')
             elif Moving_Forward == False and Turning_Delta_Init == False and Delaying == False :
-                if GPS.haversine(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude) < bearing_distance :
-                    return
-                bearing = GPS.bearing(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude)
+                #if GPS.haversine(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude) < bearing_distance :
+                    #return
+                #bearing = GPS.bearing(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude)
+                bearing = GPS.Direction
                 writeLog(LOG_GPS_POS, 'New Bearing: ' + repr(bearing))
                 old_latitude = GPS.Latitude
                 old_longitude = GPS.Longitude
