@@ -122,7 +122,7 @@ def Ping(sequence_only=False):
             #writeLog(LOG_SERIAL_IN, 'Got script command passing :\n' + da_script)
             #script.start_auto(da_script)
             #script.start_auto('Move Forward,30;')
-            script.start_auto('Turn Delta,45;')
+            script.start_auto('Turn Delta,-45;')
         else :
             Arduino.Execute(commandParts)
         Arduino.Get_Status()

@@ -53,6 +53,7 @@ def bearing(lat1, lon1, lat2, lon2) :
     x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
     bearing = degrees(atan2(y,x))
 
+    writeLog(LOG_DETAILS, 'This is a bearing : ' + bearing)
     return bearing
 
 def _valid_msg(msg) :
@@ -84,7 +85,7 @@ def _set_time(val) :
     new_time = float(val)
     if new_time != Time :
         Time = new_time
-        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(Time))
+#        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(Time))
 
 def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
     global Latitude
