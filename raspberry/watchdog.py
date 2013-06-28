@@ -8,9 +8,9 @@ interval = 30
 last_poll = 0
 
 def stop_it() :    
-    '''Arduino.open(Arduino_Port)
+    Arduino.open(Arduino_Port)
     Arduino._serial_cmd(Arduino._Commands["speed"], 0)
-    Arduino._serial_cmd(Arduino._Commands["steer"], 0)'''
+    Arduino._serial_cmd(Arduino._Commands["steer"], 0)
 
 def poll() :
     global last_poll

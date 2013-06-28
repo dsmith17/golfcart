@@ -28,6 +28,8 @@ angle_Turning = 0
 _degrees = 500*(1000/360)
 end_bearing = 0
 bearing = 0
+old_bearing = 0
+cur_turn_angle = 0
 
 Delaying = False
 delay_time = 0
@@ -83,6 +85,7 @@ def Check() :
     global _degrees
     global end_bearing
     global bearing
+    global old_bearing
     global prec_Turning
     global delta_Turning
     global old_latitude
@@ -91,6 +94,7 @@ def Check() :
     global delay_time
     global delay_length
     global Hard_Stopping
+    global cur_turn_angle
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
     if Auto_mode :
@@ -174,6 +178,8 @@ def Check() :
                         Turning_Delta = False
                         Auto_mode = True
                         _Script = ''
+                        cur_turn_angle = 0
+                        Turn_Delta_Angle = 0
                     elif Turn_Delta_Angle - cur_turn_angle < delta_Turning :
                         Arduino._serial_cmd(Arduino._Commands["speed"], 1500)
                 #elif bearing > end_bearing : #on the left side of bearing
@@ -188,6 +194,8 @@ def Check() :
                         Turning_Delta = False
                         Auto_mode = True
                         _Script = ''
+                        cur_turn_angle = 0
+                        Turn_Delta_Angle = 0
                     elif Turn_Delta_Angle - cur_turn_angle < delta_Turning : #slow
                         Arduino._serial_cmd(Arduino._Commands["speed"], 1500)
         if Hard_Stopping :
