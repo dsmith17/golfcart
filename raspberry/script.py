@@ -62,7 +62,7 @@ def read(path) :
     global Command
 
     _Script = open(path, 'r')
-    Auto_mode = True
+    #Auto_mode = True
     execute_Command('steer mode', 0)
 
 def start_auto(file_buf) :
@@ -71,7 +71,7 @@ def start_auto(file_buf) :
     global Auto_mode
     
     _Script = file_buf
-    Auto_mode = True
+    #Auto_mode = True
     writeLog(LOG_SERIAL_IN, 'This is the file :\n' + _Script)
     #execute_Command('steer mode', 0)
 
@@ -93,9 +93,9 @@ def Check() :
 
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
-    if Auto_mode and Init_Execute == False:
-        #line = _Script.readlines()
-        line = 'yes'
+    if Auto_mode :
+        line = _Script.readlines()
+        #line = 'yes'
         #writeLob(LOG_SERIAL_IN, 'In Auto_mode')
         if line != '' :
             writeLog(LOG_SERIAL_IN, 'Executing script')
@@ -111,6 +111,7 @@ def Check() :
                init_bearing = GPS.bearing(init_start_Lat, init_start_Lon, GPS.Latitude, GPS.Longitude)
                writeLog(LOG_GPS_POS, 'Initial bearing is : ' + repr(init_bearing))
                Init_Execute = False
+               Auto_mode = True
                old_latitude = GPS.Latitude
                old_longitude = GPS.Longitude
         if Moving_Forward :
