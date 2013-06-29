@@ -90,7 +90,7 @@ def _set_time(val) :
         new_time = Time
     if new_time != Time :
         Time = new_time
-#        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(Time))
+        writeLog(LOG_GPS_TIME, 'GPS time: ' + str(Time))
 
 def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
     global Latitude
@@ -111,9 +111,9 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
         new_long = -new_long
         
     if new_lat != Latitude or new_long != Longitude :
-        #writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
-        Bearing = bearing(Latitude,Longitude,new_lat,new_long)
-        print('This is a new Bearing: ' + repr(Bearing))
+        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
+        #Bearing = bearing(Latitude,Longitude,new_lat,new_long)
+        #print('This is a new Bearing: ' + repr(Bearing))
         old_Latitude = Latitude
         old_Longitude = Longitude
         Latitude = new_lat
@@ -125,7 +125,7 @@ def _set_speed(val) :
         new_speed = float(val)
 
         if new_speed != Speed :
-            #writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
+            writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
             Speed = new_speed
 def _set_dir(val) :
     global Direction

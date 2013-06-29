@@ -28,11 +28,11 @@ Turn_Delta_Angle = 0
 delta_Turning = 4
 prec_Turning = 1
 angle_Turning = 0
-_degrees = 500*(1000/360)
+_degrees = 250*(1000/360)
 end_bearing = 0
 bearing = 0
 old_bearing = 0
-bearing_distance = 2
+bearing_distance = 3
 cur_turn_angle = 0
 
 Delaying = False
@@ -93,7 +93,7 @@ def Check() :
 
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
-    if Auto_mode :
+    if Auto_mode and Turning_To == False and Turning_Delta == False and Delaying == False:
         line = _Script.readlines()
         #line = 'yes'
         #writeLob(LOG_SERIAL_IN, 'In Auto_mode')
@@ -165,17 +165,17 @@ def Check() :
                 print('This is the Init_Delta')
                 #execute('Delay,1;')
             elif Moving_Forward == False and Turning_Delta_Init == False and Delaying == False :
-                #if GPS.haversine(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude) < bearing_distance :
-                    #return
-                #bearing = GPS.bearing(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude)
-                bearing = GPS.Direction
+                if GPS.haversine(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude) < bearing_distance :
+                    return
+                bearing = GPS.bearing(old_latitude, old_longitude, GPS.Latitude, GPS.Longitude)
+                #bearing = GPS.Direction
                 writeLog(LOG_GPS_POS, 'New Bearing: ' + repr(bearing))
                 old_latitude = GPS.Latitude
                 old_longitude = GPS.Longitude
                 #if bearing < end_bearing : #on the right side of bearing
                 if Turn_Delta_Angle > 0 : #Turning right
                     if bearing < old_bearing :
-                        cur_turn_angle += (360 + bearing) - old_bearing
+                        #cur_turn_angle += (360 + bearing) - old_bearing
                     else :
                         cur_turn_angle += bearing - old_bearing
                     if Turn_Delta_Angle + delta_Turning < cur_turn_angle : #stop turning
@@ -192,7 +192,7 @@ def Check() :
                 #elif bearing > end_bearing : #on the left side of bearing
                 else : #Turning left
                     if bearing > old_bearing :
-                        cur_turn_angle += bearing - (360 + old_bearing)
+                        #cur_turn_angle += bearing - (360 + old_bearing)
                     else :
                         cur_turn_angle += bearing - old_bearing
                     if cur_turn_angle < Turn_Delta_Angle - delta_Turning: #stop turning
@@ -210,9 +210,11 @@ def Check() :
             if not Delaying :
                 Arduino._serial_cmd(Arduino._Commands["brake"], 0)
                 Hard_Stopping = False
+                Auto_Mode = True
         if Delaying :
             if time.time() - delay_start > delay_length :
                 Delaying = False
+                Auto_Mode = True
 
 def init_dir() :
     global Init_Execute, init_start_Lat, init_start_Lon
@@ -264,13 +266,11 @@ def execute(line) :
         
     # Go forward up to MAX_FORWARD_FT ft
     elif 'Move Forward' == parm[0] :
-        print('Got Move Forward')
+        print('Got Move Forward of : ' + repr(parm[1]))
         parm1 = int(parm[1])
         if parm1 > MAX_FORWARD_FT :
             parm1 = MAX_FORWARD_FT
         Moving_Forward = True
-#        execute_Command('up',0)
-#        execute_Command('up',0)
         Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
         Auto_mode = False
         start_Lat = GPS.Latitude
@@ -283,15 +283,17 @@ def execute(line) :
         Turning_To = True
         parm1 = int(parm[1])
         Turn_To_Angle = parm1
+        Auto_Mode = False
         #execute('Moving Forward,10;')
 
     # Turn a number of degrees
     elif 'Turn Delta' == parm[0] :
-        print('Got Turn Delta')
+        print('Got Turn Delta of : ' + repr(parm[1]))
         parm1 = int(parm[1])
         Turning_Delta = True
         Turning_Delta_Init = True
         Turn_Delta_Angle = parm1
+        Auto_Mode = False
         #execute('Moving Forward,10;')
         
 
