@@ -49,7 +49,7 @@ def writeLog(mask, msg):
         gps_raw.write(outMsg + '/n')
         gps_raw.flush()
     if mask & logGPS_DIR_Mask :
-        gps_dir.write(outMsg = '/n')
+        gps_dir.write(outMsg + '/n')
         gps_dir.flush()
     if mask & logGPS_POS_Mask :
         gps_pos.write(outMsg + '/n')

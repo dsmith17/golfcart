@@ -46,6 +46,9 @@ init_start_Lat = 0.0
 init_start_Lon = 0.0
 init_bearing = 0.0
 
+index = 0
+num_inst = 0
+
 def execute_Command(instruct, parm) :
     global Command
     global Instruction_num
@@ -69,11 +72,14 @@ def start_auto(file_buf) :
     global _Script
     global Command
     global Auto_mode
+    global num_inst
     
-    _Script = file_buf
+    _Script = file_buf.split('/n')
+    num_inst = len(_Script)
     #Auto_mode = True
-    writeLog(LOG_SERIAL_IN, 'This is the file :\n' + _Script)
+    #writeLog(LOG_SERIAL_IN, 'This is the file :\n' + _Script[0] + '/n' + _Script[1])
     #execute_Command('steer mode', 0)
+    writeLog(LOG_SERIAL_IN, 'The num of commands : ' + repr(num_inst))
 
 def Check() :
     global _Script
@@ -90,11 +96,17 @@ def Check() :
     global Delaying, delay_time, delay_length
     global Hard_Stopping
     global Init_Execute, init_start_Lat, init_start_Lon, init_bearing
+    global index, num_inst
 
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
-    if Auto_mode and Turning_To == False and Turning_Delta == False and Delaying == False:
-        line = _Script.readlines()
+    if Auto_mode == True and Turning_To == False and Turning_Delta == False and Delaying == False :
+        if index+1 < num_inst :
+            line = _Script[index]
+            index = index + 1
+        else :
+            writeLog(LOG_ALWAYS, 'End of Script')
+            Auto_mode = False
         #line = 'yes'
         #writeLob(LOG_SERIAL_IN, 'In Auto_mode')
         if line != '' :
@@ -175,6 +187,7 @@ def Check() :
                 #if bearing < end_bearing : #on the right side of bearing
                 if Turn_Delta_Angle > 0 : #Turning right
                     if bearing < old_bearing :
+                        cur_turn_angle = cur_turn_angle
                         #cur_turn_angle += (360 + bearing) - old_bearing
                     else :
                         cur_turn_angle += bearing - old_bearing
@@ -192,6 +205,7 @@ def Check() :
                 #elif bearing > end_bearing : #on the left side of bearing
                 else : #Turning left
                     if bearing > old_bearing :
+                        cur_turn_angle = cur_turn_angle
                         #cur_turn_angle += bearing - (360 + old_bearing)
                     else :
                         cur_turn_angle += bearing - old_bearing
@@ -210,11 +224,11 @@ def Check() :
             if not Delaying :
                 Arduino._serial_cmd(Arduino._Commands["brake"], 0)
                 Hard_Stopping = False
-                Auto_Mode = True
+                Auto_mode = True
         if Delaying :
             if time.time() - delay_start > delay_length :
                 Delaying = False
-                Auto_Mode = True
+                Auto_mode = True
 
 def init_dir() :
     global Init_Execute, init_start_Lat, init_start_Lon
@@ -283,7 +297,7 @@ def execute(line) :
         Turning_To = True
         parm1 = int(parm[1])
         Turn_To_Angle = parm1
-        Auto_Mode = False
+        Auto_mode = False
         #execute('Moving Forward,10;')
 
     # Turn a number of degrees
@@ -293,7 +307,7 @@ def execute(line) :
         Turning_Delta = True
         Turning_Delta_Init = True
         Turn_Delta_Angle = parm1
-        Auto_Mode = False
+        Auto_mode = False
         #execute('Moving Forward,10;')
         
 
