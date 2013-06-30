@@ -18,7 +18,8 @@ def Init_Mode() :
     global Script_mode
     global Script_Path
     
-    return_code = subprocess.call(['ping','-c','5','157.182.184.52'])
+    #return_code = subprocess.call(['ping','-c','5','157.182.184.52'])
+    return_code = 0
     if return_code == 1 :
         Script_mode = True
         script.init_dir()

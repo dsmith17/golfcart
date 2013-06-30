@@ -45,6 +45,7 @@ Init_Execute = False
 init_start_Lat = 0.0
 init_start_Lon = 0.0
 init_bearing = 0.0
+init_file = ''
 
 index = 0
 num_inst = 0
@@ -68,15 +69,16 @@ def read(path) :
     #Auto_mode = True
     execute_Command('steer mode', 0)
 
-def start_auto(file_buf) :
+def start_auto() :
     global _Script
     global Command
     global Auto_mode
     global num_inst
+    global init_file
     
-    _Script = file_buf.split('\n')
+    _Script = init_file.split('\n')
     num_inst = len(_Script)
-    #Auto_mode = True
+    Auto_mode = True
     #writeLog(LOG_SERIAL_IN, 'This is the file :\n' + _Script[0] + '/n' + _Script[1])
     #execute_Command('steer mode', 0)
     writeLog(LOG_SERIAL_IN, 'The num of commands : ' + repr(num_inst))
@@ -125,7 +127,8 @@ def Check() :
                init_bearing = GPS.bearing(init_start_Lat, init_start_Lon, GPS.Latitude, GPS.Longitude)
                writeLog(LOG_GPS_POS, 'Initial bearing is : ' + repr(init_bearing))
                Init_Execute = False
-               Auto_mode = True
+               start_auto()
+               #Auto_mode = True
                old_latitude = GPS.Latitude
                old_longitude = GPS.Longitude
         if Moving_Forward :
@@ -232,10 +235,10 @@ def Check() :
                 Delaying = False
                 Auto_mode = True
 
-def init_dir() :
-    global Init_Execute, init_start_Lat, init_start_Lon
+def init_dir(file_buf) :
+    global Init_Execute, init_start_Lat, init_start_Lon, init_script
 
-    Init_Mode = True
+    init_script = file_buf
     init_start_Lat = GPS.Latitude
     init_start_Lon = GPS.Longitude
     Init_Execute = True

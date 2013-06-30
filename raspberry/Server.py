@@ -119,9 +119,9 @@ def Ping(sequence_only=False):
         writeLog(LOG_NEW_COMMAND, 'New command: ' + str(commandParts))
         if commandParts[1] == 'script' :
             da_script = Get_Script(_Script)
-            script.init_dir()
+            script.init_dir(da_script)
             writeLog(LOG_SERIAL_IN, 'Got script command passing : ' + da_script)
-            script.start_auto(da_script)
+            #script.start_auto(da_script)
             #script.start_auto('Move Forward,30;')
             #script.start_auto('Turn Delta,80;')
         else :
