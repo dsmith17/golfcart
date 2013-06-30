@@ -86,7 +86,7 @@ def _set_time(val) :
     try :
         new_time = float(val)
     except ValueError :
-        print('Got a bad float')
+        writeLog(LOG_ERROR, 'Got a bad float conversion')
         new_time = Time
     if new_time != Time :
         Time = new_time
@@ -101,14 +101,21 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
     
     if len(lat) == 0 or len(longt) == 0 :
         return
+    try :
+        new_lat = float(lat[0:2]) + float(lat[2:])/60
+        if lat_hemi == 'S' :
+            new_lat = -new_lat
+    except ValueError :
+        writeLog(LOG_ERROR, 'Got a bad float conversion')
+        new_lat = Latitude
 
-    new_lat = float(lat[0:2]) + float(lat[2:])/60
-    if lat_hemi == 'S' :
-        new_lat = -new_lat
-        
-    new_long = float(longt[0:3]) + float(longt[3:])/60
-    if longt_hemi == 'E' :
-        new_long = -new_long
+    try :
+        new_long = float(longt[0:3]) + float(longt[3:])/60
+        if longt_hemi == 'E' :
+            new_long = -new_long
+    except ValueError :
+        writeLog(LOG_ERROR, 'Got a bad float conversion')
+        new_long = Longitude
         
     if new_lat != Latitude or new_long != Longitude :
         writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
@@ -122,7 +129,10 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
 def _set_speed(val) :
     global Speed
     if len(val) != 0 :
-        new_speed = float(val)
+        try :
+            new_speed = float(val)
+        except ValueError :
+            writeLog(LOG_ERROR, 'Got a bad float conversion')
 
         if new_speed != Speed :
             writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
@@ -130,7 +140,11 @@ def _set_speed(val) :
 def _set_dir(val) :
     global Direction
     if len(val) != 0 :
-        new_dir = float(val)
+        try :
+            new_dir = float(val)
+        except ValueError :
+            writeLog(LOG_ERROR, 'Got a bad float conversion')
+            new_dir = Direction
         if new_dir != Direction :
             Direction = new_dir
             writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))

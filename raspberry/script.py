@@ -74,12 +74,14 @@ def start_auto(file_buf) :
     global Auto_mode
     global num_inst
     
-    _Script = file_buf.split('/n')
+    _Script = file_buf.split('\n')
     num_inst = len(_Script)
     #Auto_mode = True
     #writeLog(LOG_SERIAL_IN, 'This is the file :\n' + _Script[0] + '/n' + _Script[1])
     #execute_Command('steer mode', 0)
     writeLog(LOG_SERIAL_IN, 'The num of commands : ' + repr(num_inst))
+    for i in range(0,num_inst) :
+        writeLog(LOG_DETAILS, 'The '+repr(i)+' command is : ' + _Script[i])
 
 def Check() :
     global _Script

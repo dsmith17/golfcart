@@ -10,14 +10,14 @@ Connected = False
 
 # status variables
 Speed = 0
-Speed_Start = 1200
+Speed_Start = 1500
 Steer = 0
 Steer_current = 0
 Direction = 0
 Brake = 0
 Steer_Mode = 0 
 Steer_Step = 45
-Speed_Step = 500
+Speed_Step = 300
 Speed_First = 1200
 
 _Sequence = 0

@@ -15,7 +15,7 @@ Script_Path = 'script.txt'
 Script_mode = False
 
 def Init_Mode() :
-    global Auto_mode
+    global Script_mode
     global Script_Path
     
     return_code = subprocess.call(['ping','-c','5','157.182.184.52'])
@@ -28,10 +28,10 @@ def Init_Mode() :
     #subprocess.call(['python','watchdog.py'])
 
 def  poll():
-    if Script_mode == False:
-        Server.Ping()
     GPS.Check()
     Arduino.Check()
+    if Script_mode == False:
+        Server.Ping()
     script.Check()
     time.sleep(0.55)
 
