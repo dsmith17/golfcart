@@ -50,6 +50,9 @@ init_file = ''
 index = 0
 num_inst = 0
 
+Heading_distance = 0
+Following_Heading = 0
+
 def execute_Command(instruct, parm) :
     global Command
     global Instruction_num
@@ -101,6 +104,7 @@ def Check() :
     global Hard_Stopping
     global Init_Execute, init_start_Lat, init_start_Lon, init_bearing
     global index, num_inst
+    global Heading_distance, Following_Heading
 
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
@@ -234,6 +238,7 @@ def Check() :
             if time.time() - delay_start > delay_length :
                 Delaying = False
                 Auto_mode = True
+        if 
 
 def init_dir(file_buf) :
     global Init_Execute, init_start_Lat, init_start_Lon, init_script
@@ -246,21 +251,16 @@ def init_dir(file_buf) :
     writeLog(LOG_GPS_POS, 'Init is done')
     
 def execute(line) :
-    global start_Lat
-    global start_Lon
+    global start_Lat, start_Lon
     global end_Distance
     global Auto_mode
     global Moving_Forward
     global MAX_FORWARD_FT
-    global Turning_Delta
-    global Turning_Delta_Init
-    global Turn_Delta_Angle
-    global Turning_To
-    global Turn_To_Angle
-    global Delaying
-    global delay_start
-    global delay_length
+    global Turning_Delta, Turning_Delta_Init, Turn_Delta_Angle
+    global Turning_To, Turn_To_Angle
+    global Delaying, delay_start, delay_length
     global Hard_Stopping
+    global Heading_distance, Following_Heading
 
     #Format line
     line = line.strip();
@@ -298,7 +298,7 @@ def execute(line) :
 
     # Turn to a specified compass heading
     elif 'Turn To' == parm[0] :
-        print('Got Turn To')
+        writeLog(LOG_DETAILS, 'Got Turn To of : ' + repr(parm[1]))
         Turning_To = True
         parm1 = int(parm[1])
         Turn_To_Angle = parm1
@@ -307,7 +307,7 @@ def execute(line) :
 
     # Turn a number of degrees
     elif 'Turn Delta' == parm[0] :
-        print('Got Turn Delta of : ' + repr(parm[1]))
+        writeLog(LOG_DETAILS, 'Got Turn Delta of : ' + repr(parm[1]))
         parm1 = int(parm[1])
         Turning_Delta = True
         Turning_Delta_Init = True
@@ -315,17 +315,21 @@ def execute(line) :
         Auto_mode = False
         #execute('Moving Forward,10;')
         
-
-#    elif 'Follow Heading' in line :
+    # Stay on current compass heading for specified feet
+    elif 'Follow Heading' == parm[0] :
+        Heading_distance = parm[1]
+        Following_Heading = True
+        Auto_mode = False
+        execute('Moving Forward,' + repr(Heading_distance) + ';')
 
 #    elif 'Follow Course' in line :
 
 #    elif 'Control Speed' in line :
 
     elif 'Delay' in line :
-        print('Got Delay')
         parm1 = int(parm[1])
         Delaying = True
         delay_length = parm1
         delay_start = time.time()
+        writeLog(LOG_DETAILS, 'Got Delay of :' + repr(delay_length))
     
