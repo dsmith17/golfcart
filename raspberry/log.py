@@ -5,6 +5,7 @@ import time
 # Log file records timestamped activity. Data being logged can be controlled
 # by setting logMask and logConsoleMask
 logFile = open('logs/log-PythonClient.txt', 'a')
+watchFile = open('logs/log_watchdog.txt', 'a')
 gps_pos = open('logs/log-Gps_Position.txt', 'a')
 gps_dir = open('logs/log_Gps_Direction.txt', 'a')
 gps_raw = open('logs/log_Gps_Raw_Data.txt', 'a')
@@ -21,6 +22,7 @@ LOG_GPS_POS     = 0x00002000
 LOG_GPS_DIR     = 0x00004000
 LOG_GPS_SPEED   = 0x00008000
 LOG_GPS_TIME    = 0x00010000
+LOG_WATCHDOG    = 0x00100000
 LOG_DETAILS     = 0x40000000
 LOG_ERROR       = 0x80000000
 LOG_ALWAYS      = 0xFFFFFFFF
@@ -31,6 +33,7 @@ logConsoleMask  = 0xFFFFFFFF & ~(LOG_PING_SERVER | LOG_GPS_RAW | LOG_GPS_TIME | 
 logGPS_POS_Mask = 0x0000F000 & ~(LOG_GPS_SPEED | LOG_GPS_DIR | LOG_GPS_RAW)
 logGPS_DIR_Mask = 0x0000F000 & ~(LOG_GPS_SPEED | LOG_GPS_POS | LOG_GPS_RAW)
 logGPSMask      = 0x000FF000
+logWatchMask    = 0x00F00000
 
 def writeLog(mask, msg):
     global logFile
@@ -54,4 +57,7 @@ def writeLog(mask, msg):
     if mask & logGPS_POS_Mask :
         gps_pos.write(outMsg + '\n')
         gps_pos.flush()
+    if mask & logWatchMask :
+        watchFile.write(outMsg + '\n')
+        watchFile.flush()
 

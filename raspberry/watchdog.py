@@ -4,7 +4,7 @@ import subprocess
 import time
 
 Arduino_Port = '/dev/ttyACM0'
-interval = 30
+interval = 5
 last_poll = 0
 
 def stop_it() :    
@@ -13,17 +13,15 @@ def stop_it() :
     Arduino._serial_cmd(Arduino._Commands["steer"], 0)
 
 def poll() :
-    global last_poll
-    
-    if last_poll + interval > time.time() :
-        return
-    last_poll = time.time()    
-    writeLog(LOG_ALWAYS, 'WatchDog Watching')
+    writeLog(LOG_WATCHDOG, 'WatchDog Checking')
     if 'python controller.py' in subprocess.check_output(['ps','u']) :
-        writeLog(LOG_ALWAYS, 'We\'re ok')
+        writeLog(LOG_WATCHDOG, 'Controler is still running')
     else :
-        writeLog(LOG_ALWAYS, 'It\'s dead Jim')
+        writeLog(LOG_WATCHDOG, 'Controler has stoped')
         stop_it()
 
 while(1):
+    global interval
+    
+    time.sleep(interval)
     poll()

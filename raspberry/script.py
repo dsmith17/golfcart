@@ -22,6 +22,7 @@ old_latitude = 0.0
 old_longitude = 0.0
 
 Turning_To = False
+Turn_To_Set = False
 Turning_Delta = False
 Turning_Delta_Init = False
 Turn_Delta_Angle = 0
@@ -72,6 +73,16 @@ def read(path) :
     #Auto_mode = True
     execute_Command('steer mode', 0)
 
+def init_dir(file_buf) :
+    global Init_Execute, init_start_Lat, init_start_Lon, init_script
+
+    init_script = file_buf
+    init_start_Lat = GPS.Latitude
+    init_start_Lon = GPS.Longitude
+    Init_Execute = True
+    execute('Move Forward,10;')
+    writeLog(LOG_GPS_POS, 'Init is done')
+
 def start_auto() :
     global _Script
     global Command
@@ -93,7 +104,7 @@ def Check() :
     global start_Lat, start_Lon
     global current_Distance, end_Distance, delta_Distance
     global Moving_Forward
-    global Turning_To, Turn_To_Angle
+    global Turning_To, Turn_To_Angle, Turn_To_Set
     global Turning_Delta, Turn_Delta_Angle, Turning_Delta_Init
     global Auto_mode
     global _degrees
@@ -108,7 +119,7 @@ def Check() :
 
 
     #writeLog(LOG_SERIAL_IN, 'Script checking')    
-    if Auto_mode == True and Turning_To == False and Turning_Delta == False and Delaying == False :
+    if Auto_mode == True and Moving_Forward == False and Turning_To == False and Turning_Delta == False and Delaying == False :
         if index+1 < num_inst :
             line = _Script[index]
             index = index + 1
@@ -147,10 +158,9 @@ def Check() :
                 Arduino._serial_cmd(Arduino._Commands["speed"], 0)
                 Moving_Forward = False
                 Auto_mode = True
-                _Script = ''
                 bearing = GPS.bearing(start_Lat, start_Lon, GPS.Latitude, GPS.Longitude)
         if Turning_To :
-            if Moving_Forward == False :
+            if Turn_To_Set == False :
                 if Turn_To_Angle > init_bearing :
                     if Turn_To_Angle - bearing > 180 : #Turn left
                         #bearing = -1*((360 - Turn_To_Angle) + bearing)
@@ -165,13 +175,13 @@ def Check() :
                     else : #Turn Left
                         Arduino._serial_cmd(Arduino._Commands["steer"], -1*_degrees)
                         #bearing = Turn_To_Angle - bearing
-                Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
-                Turning_Delta_Init = False
-                old_latitude = GPS.Latitude
-                old_longitude = GPS.Longitude
-                end_bearing = Turn_To_Angle
-                Turning_Delta = True
-                Turning_To = False
+            Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
+            Turning_Delta_Init = False
+            old_latitude = GPS.Latitude
+            old_longitude = GPS.Longitude
+            end_bearing = Turn_To_Angle
+            Turning_Delta = True
+            Turning_To = False
         if Turning_Delta :
             if Moving_Forward == False and Turning_Delta_Init == True :
                 end_bearing = Turn_Delta_Angle + init_bearing
@@ -205,7 +215,6 @@ def Check() :
                         Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                         Turning_Delta = False
                         Auto_mode = True
-                        _Script = ''
                         cur_turn_angle = 0
                         Turn_Delta_Angle = 0
                         init_bearing = bearing
@@ -223,7 +232,6 @@ def Check() :
                         Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                         Turning_Delta = False
                         Auto_mode = True
-                        _Script = ''
                         cur_turn_angle = 0
                         Turn_Delta_Angle = 0
                         init_bearing = bearing
@@ -238,18 +246,7 @@ def Check() :
             if time.time() - delay_start > delay_length :
                 Delaying = False
                 Auto_mode = True
-        if 
 
-def init_dir(file_buf) :
-    global Init_Execute, init_start_Lat, init_start_Lon, init_script
-
-    init_script = file_buf
-    init_start_Lat = GPS.Latitude
-    init_start_Lon = GPS.Longitude
-    Init_Execute = True
-    execute('Move Forward,10;')
-    writeLog(LOG_GPS_POS, 'Init is done')
-    
 def execute(line) :
     global start_Lat, start_Lon
     global end_Distance
@@ -257,7 +254,7 @@ def execute(line) :
     global Moving_Forward
     global MAX_FORWARD_FT
     global Turning_Delta, Turning_Delta_Init, Turn_Delta_Angle
-    global Turning_To, Turn_To_Angle
+    global Turning_To, Turn_To_Angle, Turn_To_Set
     global Delaying, delay_start, delay_length
     global Hard_Stopping
     global Heading_distance, Following_Heading
@@ -302,6 +299,13 @@ def execute(line) :
         Turning_To = True
         parm1 = int(parm[1])
         Turn_To_Angle = parm1
+        if len(parm) > 2 :
+            if parm[2] == 'left' :
+                Arduino._serial_cmd(Arduino._Commands["steer"], -1*_degrees)
+                Turn_To_Set = True
+            elif parm[2] == 'right' :
+                Arduino._serial_cmd(Arduino._Commands["steer"], _degrees)
+                Turn_To_Set = True
         Auto_mode = False
         #execute('Moving Forward,10;')
 
