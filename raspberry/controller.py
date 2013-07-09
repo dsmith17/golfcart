@@ -4,6 +4,7 @@ import GPS
 import Arduino
 import Server
 import script
+import commands
 import subprocess
 
 url = 'http://157.182.184.52/~student1/command.php'
@@ -33,6 +34,7 @@ def  poll():
     Arduino.Check()
     if Script_mode == False:
         Server.Ping()
+    commands.Check()
     script.Check()
     time.sleep(0.55)
 
