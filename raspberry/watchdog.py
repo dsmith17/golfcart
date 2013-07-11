@@ -4,8 +4,11 @@ import subprocess
 import time
 
 Arduino_Port = '/dev/ttyACM0'
+log_path = 'logs/logs-watchdog.txt'
 interval = 5
 last_poll = 0
+
+openFile(log_path)
 
 def stop_it() :    
     Arduino.open(Arduino_Port)
