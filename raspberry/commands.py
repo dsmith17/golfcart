@@ -16,8 +16,13 @@ _last_direction = 0
 Turn_Delta_Angle = 0
 delta_angle_current = 0
 _degrees = 250*(1000/360)
+turn_active = False
 Turn_To_Angle = 0
 Turn_To_Direction = ''
+
+HEADING_DELTA = 5
+heading_direction = 0
+adjusting_heading = False
 
 _Commands = { 'sstop', 'hstop', 'forward', 'turnto', 'turndelta', 'heading' }
 
@@ -26,8 +31,9 @@ def Execute(command) :
     global Delay_Time
     global Distance
     global Start_Lat, Start_Long
-    global Turn_Delta_Angle, _degrees
+    global Turn_Delta_Angle, _degrees, turn_active
     global Turn_To_Angle, Turn_To_Direction
+    global heading_direction
 
     command = command.strip();
     command = command.rstrip(';')
@@ -62,7 +68,9 @@ def Execute(command) :
                 Turn_To_Angle = 0
                 Command_Running = False
                 return
-            Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
+            if Arduino.Speed == 0 :
+                Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
+                turn_active = True
             last_bearing = GPS.Direction
             Turn_To_Direction = parm[2]            
         except ValueError :
@@ -72,7 +80,9 @@ def Execute(command) :
     elif parm[0] == 'turndelta' :
         try :
             Turn_Delta_Angle = int(parm[1])
-            Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
+            if Arduino.Speed == 0 :
+                Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
+                turn_active = True
             last_bearing = GPS.Direction
             if Turn_Delta_Angle > 0 :
                 Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
@@ -93,10 +103,33 @@ def Execute(command) :
             Command_Running = False
             logWrite(LOG_ERROR, "Command forward failed... Conversion fail");
     elif parm[0] == 'heading' :
-        pass
+        try :
+            Distance = int(parm[1])
+            heading_direction = GPS.Direction
+            Start_Lat = GPS.Latitude
+            Start_Long = GPS.Lonitude
+            Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
+        except ValueError :
+            Distance = 0
+            Command_Running = False
+            logWrite(LOG_ERROR, "Command heading failed... Conversion fail")
+    elif parm[0] == 'course' :
+        try :
+            Distance = int(parm[1])
+            heading_direction = int(parm[2])
+            if heading_direction > 360 or heading_direction < 0 :
+                logWrite(LOG_ERROR, "Command course failed... direction not between 0 and 360")
+                return
+            Start_Lat = GPS.Latitude
+            Start_Long = GPS.Lonitude
+            Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
+        except ValueError :
+            Distance = 0
+            Command_Running = False
+            logWrite(LOG_ERROR, "Command course failed... Conversion fail")
     elif parm[0] == 'delay' :
         Delay_Time = int(parm[1])
-    else
+    else :
         writeLog(LOG_ERROR, 'Unrecognized command')
         Command_Running = False
 
@@ -106,12 +139,13 @@ def Check() :
     global Delay_Time
     global Turn_Delta_Angle, delta_angle_current
     global Turn_To_Angle, Turn_To_Direction
+    global HEADING_DELTA, heading_direction, adjusting_heading
 
     if not Command_Running :
         return
 
     if Current_Command == 'sstop' :
-        GPS.Connected and GPS.Speed == 0.0 :
+        if GPS.Connected and GPS.Speed == 0.0 :
             Command_Running = False
             Arduino._serial_cmd(Arduino._Commands["brake"], 0) # releases the brake
         if Command_Start + Delay_Time < time.time() :
@@ -119,7 +153,7 @@ def Check() :
             Arduino._serial_cmd(Arduino._Commands["brake"], 0) # releases the brake
     elif Current_Command == 'hstop' :
         # I don't know if I have the correct brake status here
-        GPS.Connected and GPS.Speed == 0.0 and Arduino.Brake == 3:
+        if GPS.Connected and GPS.Speed == 0.0 and Arduino.Brake == 3:
             Command_Running = False
             Arduino._serial_cmd(Arduino._Commands["brake"], 0) # releases the brake
         if Command_Start + Delay_Time < time.time() :
@@ -131,13 +165,17 @@ def Check() :
             if _last_direction < cur_dir : # ignore the angle change of going from 360 to 0
                 if cur_dir >= Turn_To_Angle :
                     Arduino._serial_cmd(Arudino._Commands["steer"], 0)
-                    Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                    if turn_active :
+                        Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                        turn_active = False
                     Command_Running = False
-        if Turn_To_Direction = 'left' :
+        if Turn_To_Direction == 'left' :
             if _last_direction > cur_dir :
                 if cur_dir <= Turn_To_Angle :
-                    Arduino._serial_cmd(Arudino._Commands["steer"], 0)
-                    Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                    if turn_active :
+                        Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                        turn_active = False
+                    Arduino._serial_cmd(Arudino._Commands["steer"], 0)                    
                     Command_Running = False
     elif Current_Command == 'turndelta' :
         cur_dir = GPS.Direction
@@ -146,26 +184,61 @@ def Check() :
                 delta_angle_current += GPS.Direction - _last_direction
             if delta_angle_current > Turn_Delta_Angle :
                 Arduino._serial_cmd(Arudino._Commands["steer"], 0)
-                Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                if turn_active :
+                        Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                        turn_active = False
                 Command_Running = False
         if Turn_Delta_Angle < 0 : # turning left
             if cur_dir < _last_direction :
                 delta_angle_current += _last_direction - GPS.Direction 
             if delta_angle_current < Turn_Delta_Angle :
                 Arduino._serial_cmd(Arudino._Commands["steer"], 0)
-                Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                if turn_active :
+                        Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+                        turn_active = False
                 Command_Running = False
         _last_direction = cur_dir
     elif Current_Command == 'forward' :
         distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
         if distance > Distance :
             Command_Running = False
+            Arduino._serial_cmd(Arduino._Commands["speed"], 0)
     elif Current_Command == 'heading' :
-        pass
+        distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
+        cur_dir = GPS.Direction
+        if distance > Distance :
+            Command_Running = False
+            Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
+        if cur_dir - heading_direction > HEADING_DELTA and not adjusting_heading : # veering right
+            Arduino._serial_cmd(Arudino._Commands["steer"], -_degrees)
+            adjusting_heading = True
+        elif -cur_dir + heading_direction > HEADING_DELTA and not adjusting_heading: # veering left
+            Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
+            adjusting_heading = True
+        elif -cur_dir + heading_direction < HEADING_DELTA and cur_dir - heading_direction < HEADING_DELTA : # assumes check() is often enough to stop turn before veering opposite way
+            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
+            adjusting_heading = False
+    elif Current_Command == 'course' :
+        distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
+        cur_dir = GPS.Direction
+        if distance > Distance :
+            Command_Running = False
+            Arduino._serial_cmd(Arduino._Commands["speed"], 0)
+            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
+        if cur_dir - heading_direction > HEADING_DELTA and not adjusting_heading : # veering right or need to turn left
+            Arduino._serial_cmd(Arudino._Commands["steer"], -_degrees)
+            adjusting_heading = True
+        elif -cur_dir + heading_direction > HEADING_DELTA and not adjusting_heading: # veering left or need to turn right
+            Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
+            adjusting_heading = True
+        elif -cur_dir + heading_direction < HEADING_DELTA and cur_dir - heading_direction < HEADING_DELTA : # assumes check() is often enough to stop turn before veering opposite way
+            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
+            adjusting_heading = False
     elif Current_Command == 'delay' :
         if Command_Start + Delay_Time < time.time() :
             Command_Running = False
-    else
+    else :
         writeLog(LOG_ERROR, 'Unrecognized command')
         Command_Running = False
 
