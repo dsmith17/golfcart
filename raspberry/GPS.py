@@ -137,7 +137,7 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
         old_Longitude = Longitude
         Latitude = (1-LAT_CONST) * old_Latitude + LAT_CONST * new_lat
         Longitude = (1-LONG_CONST) * old_Longitude + LONG_CONST * new_long
-        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(Latitude) + ' ' + str(Longitude)
+        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(Latitude) + ' ' + str(Longitude))
     
 def _set_speed(val) :
     global old_Speed
