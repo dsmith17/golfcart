@@ -23,10 +23,18 @@ Longitude = 0.0
 old_Latitude = 0.0
 old_Longitude = 0.0
 Direction = 0.0
+old_Direction = 0.0
 Speed = 0.0
+old_Speed = 0.0
 Time = 0.0
 _Buffer = ' '
 Bearing = 0.0
+
+LONG_CONST = 0.5
+LAT_CONST = 0.5
+SPEED_CONST = 0.5
+SPEED_THRESH = 0.5
+DIREC_CONST = 0.5
 
 #calculates the distance between two gps coordinates returns ft
 def haversine(lat1, lon1, lat2, lon2):
@@ -98,6 +106,11 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
     global old_Latitude
     global old_Longitude
     global Bearing
+    global LONG_CONST
+    global LAT_CONST
+    global SPEED_CONST
+    global SPEED_THRESH
+    global DIREC_CONST
     
     if len(lat) == 0 or len(longt) == 0 :
         return
@@ -118,15 +131,16 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
         new_long = Longitude
         
     if new_lat != Latitude or new_long != Longitude :
-        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(new_lat) + ' ' + str(new_long))
         #Bearing = bearing(Latitude,Longitude,new_lat,new_long)
         #print('This is a new Bearing: ' + repr(Bearing))
         old_Latitude = Latitude
         old_Longitude = Longitude
-        Latitude = new_lat
-        Longitude = new_long
+        Latitude = (1-LAT_CONST) * old_Latitude + LAT_CONST * new_lat
+        Longitude = (1-LONG_CONST) * old_Longitude + LONG_CONST * new_long
+        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(Latitude) + ' ' + str(Longitude)
     
 def _set_speed(val) :
+    global old_Speed
     global Speed
     if len(val) != 0 :
         try :
@@ -134,20 +148,26 @@ def _set_speed(val) :
         except ValueError :
             writeLog(LOG_ERROR, 'Got a bad float conversion')
 
-        if new_speed != Speed :
-            writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(new_speed))
-            Speed = new_speed
+        if new_speed > SPEED_THRESH :
+            if new_speed != Speed :
+                 old_Speed = Speed
+                 Speed = (1-SPEED_CONST) * old_Speed + SPEED_CONST * new_speed
+                 writeLog(LOG_GPS_SPEED, 'GPS speed: ' + str(Speed))
+                 
 def _set_dir(val) :
     global Direction
+    global old_Direction
     if len(val) != 0 :
         try :
             new_dir = float(val)
         except ValueError :
             writeLog(LOG_ERROR, 'Got a bad float conversion')
             new_dir = Direction
-        if new_dir != Direction :
-            Direction = new_dir
-            writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
+        if Speed > SPEED_THRESH :
+            if new_dir != Direction :
+                old_Direction = Direction
+                Direction = (1-DIREC_CONST) * old_Direction + DIREC_CONST * new_dir
+                writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
 
 def _GPGGA(fields):
     _set_time(fields[1])
