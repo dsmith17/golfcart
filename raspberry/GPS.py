@@ -137,7 +137,8 @@ def _set_lat_long(lat, lat_hemi, longt, longt_hemi) :
         old_Longitude = Longitude
         Latitude = (1-LAT_CONST) * old_Latitude + LAT_CONST * new_lat
         Longitude = (1-LONG_CONST) * old_Longitude + LONG_CONST * new_long
-        writeLog(LOG_GPS_POS, 'GPS pos: ' + str(Latitude) + ' ' + str(Longitude))
+        writeLog(LOG_GPS_RAW, 'Raw GPS pos: ' + str(new_lat) + ' ' + str(new_long))
+        writeLog(LOG_GPS_POS, 'Filtered GPS pos: ' + str(Latitude) + ' ' + str(Longitude))
     
 def _set_speed(val) :
     global old_Speed
@@ -190,12 +191,13 @@ def _GPVTG(fields):
     _set_speed(fields[3])
     _set_dir(fields[1])
 
-_func = {'$GPVTG': _GPVTG,
+'''_func = {'$GPVTG': _GPVTG,
             '$GPGGA': _GPGGA,
             '$GPGLL': _GPGLL,
             '$GPGSA': _GPGSA,
             '$GPRMC': _GPRMC,
-            '$GPGSV': _GPGSV}
+            '$GPGSV': _GPGSV}'''
+_func = {'$GPRMC': _GPRMC}
 
 def Check():
     global _Port
