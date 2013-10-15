@@ -8,10 +8,17 @@ Script_File = ''
 Script_Running = False
 
 def start_script(script) :
-    Script_File = open(script, 'r')
+    global Script_Running
+    global Script_File
+
+    #Script_File = (script, 'r')
+    Script_File = script
     Script_Running = True
 
 def Check() :
+    global Script_Running
+    global Script_File
+
     if not Script_Running :
         return
 

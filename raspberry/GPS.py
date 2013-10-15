@@ -171,11 +171,13 @@ def _set_dir(val) :
                 writeLog(LOG_GPS_DIR, 'GPS dir: ' + str(Direction))
 
 def _GPGGA(fields):
-    _set_time(fields[1])
-    _set_lat_long(fields[2],fields[3],fields[4], fields[5])
+    pass
+    #_set_time(fields[1])
+    #_set_lat_long(fields[2],fields[3],fields[4], fields[5])
 def _GPGLL(fields):
-    _set_time(fields[5])
-    _set_lat_long(fields[1],fields[2],fields[3], fields[4])   
+    pass
+    #_set_time(fields[5])
+    #_set_lat_long(fields[1],fields[2],fields[3], fields[4])   
 def _GPGSA(fields):
     # GPS satelite data and whether locked or not
     pass
@@ -188,16 +190,17 @@ def _GPGSV(fields) :
     # GPS satelite data and quality
     pass
 def _GPVTG(fields):
-    _set_speed(fields[3])
-    _set_dir(fields[1])
+    pass
+    #_set_speed(fields[3])
+    #_set_dir(fields[1])
 
-'''_func = {'$GPVTG': _GPVTG,
+_func = {'$GPVTG': _GPVTG,
             '$GPGGA': _GPGGA,
             '$GPGLL': _GPGLL,
             '$GPGSA': _GPGSA,
             '$GPRMC': _GPRMC,
-            '$GPGSV': _GPGSV}'''
-_func = {'$GPRMC': _GPRMC}
+            '$GPGSV': _GPGSV}
+#_func = {'$GPRMC': _GPRMC}
 
 def Check():
     global _Port
