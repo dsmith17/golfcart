@@ -24,7 +24,7 @@ LOG_ERROR       = 0x80000000
 LOG_ALWAYS      = 0xFFFFFFFF
 
 logMask         = 0xFFFFFFFF
-logConsoleMask  = 0xFFFFFFFF
+logConsoleMask  = 0xFFFF0FFE
 
 def openFile(filepath):
     logFile.close()

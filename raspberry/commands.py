@@ -19,6 +19,7 @@ _degrees = 250*(1000/360)
 turn_active = False
 Turn_To_Angle = 0
 Turn_To_Direction = ''
+have_direction = False
 
 HEADING_DELTA = 5
 heading_direction = 0
@@ -33,6 +34,7 @@ def Execute(command) :
     global Start_Lat, Start_Long
     global Turn_Delta_Angle, _degrees, turn_active
     global Turn_To_Angle, Turn_To_Direction
+    global have_direction
     global heading_direction
 
     command = command.strip();
@@ -61,7 +63,7 @@ def Execute(command) :
             if parm[2] == 'right' :
                 Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
             elif parm[2] == 'left' :
-                Arduino._serial_cmd(Arudino._Commands["steer"], -_degrees)
+                Arduino._serial_cmd(Arduino._Commands["steer"], -_degrees)
             else :
                 writeLog(LOG_ERROR, "Unknown turnto Direction... Skipping");
                 Turn_To_Angle = 0
@@ -70,7 +72,8 @@ def Execute(command) :
             if Arduino.Speed == 0 :
                 Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
                 turn_active = True
-            last_bearing = GPS.Direction
+            if GPS.Direction != 0 :
+                have_direction = True
             Turn_To_Direction = parm[2]            
         except ValueError :
             Turn_To_Angle = 0
@@ -136,7 +139,7 @@ def Check() :
     global Command_Running, Current_Command, Command_Start
     global Delay_Time
     global Turn_Delta_Angle, delta_angle_current
-    global Turn_To_Angle, Turn_To_Direction
+    global Turn_To_Angle, Turn_To_Direction, have_direction
     global HEADING_DELTA, heading_direction, adjusting_heading
 
     if not Command_Running :
@@ -159,6 +162,17 @@ def Check() :
             Arduino._serial_cmd(Arduino._Commands["brake"], 0) # releases the brake
     elif Current_Command == 'turnto' :
         cur_dir = GPS.Direction
+        if have_direction == True :
+            if Turn_To_Direction - Turn_Delta_Angle < cur_dir and cur_dir < Turn_To_Direction + Turn_Delta_Angle :
+                Arduino._serial_cmd(Arduino._Commands["steer"], 0)
+                if turn_active :
+                    Arduion._serial_cmd(Arduino._Commands["speed"], 0)
+                    turn_active = False
+                Command_Running = False
+        else :
+            if GPS.Direction != 0 :
+                have_direction = True
+        '''cur_dir = GPS.Direction
         if Turn_To_Direction == 'right' :
             if _last_direction < cur_dir : # ignore the angle change of going from 360 to 0
                 if cur_dir >= Turn_To_Angle :
@@ -174,7 +188,7 @@ def Check() :
                         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
                         turn_active = False
                     Arduino._serial_cmd(Arudino._Commands["steer"], 0)                    
-                    Command_Running = False
+                    Command_Running = False'''
     elif Current_Command == 'forward' :
         distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
         if distance > Distance :
