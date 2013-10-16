@@ -75,7 +75,7 @@ def Execute(command) :
         except ValueError :
             Turn_To_Angle = 0
             Command_Running = False
-            logWrite(LOG_ERROR, "Command turnto failed... Conversion fail");
+            writeLog(LOG_ERROR, "Command turnto failed... Conversion fail");
     elif parm[0] == 'turndelta' : # formats a turnto string and calls execute again
         try :
             turn_direction = ''
@@ -89,7 +89,7 @@ def Execute(command) :
         except ValueError :
             Turn_Delta_Angle = 0
             Command_Running = False
-            logWrite(LOG_ERROR, "Command turndelta failed... Conversion fail");
+            writeLog(LOG_ERROR, "Command turndelta failed... Conversion fail");
     elif parm[0] == 'forward' :
         try :
             Distance = int(parm[1])
