@@ -15,7 +15,7 @@ _last_direction = 0
 
 Turn_Delta_Angle = 0
 delta_angle_current = 0
-_degrees = 250*(1000/360)
+_degrees = 100*(1000/360)
 turn_active = False
 Turn_To_Angle = 0
 Turn_To_Direction = ''
@@ -61,8 +61,10 @@ def Execute(command) :
         try :
             Turn_To_Angle = int(parm[1])
             if parm[2] == 'right' :
+                writeLog(LOG_DETAILS, "Turning Right")
                 Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
             elif parm[2] == 'left' :
+                writeLog(LOG_DETAILS, "Turning Left")
                 Arduino._serial_cmd(Arduino._Commands["steer"], -_degrees)
             else :
                 writeLog(LOG_ERROR, "Unknown turnto Direction... Skipping");
@@ -97,7 +99,7 @@ def Execute(command) :
         try :
             Distance = int(parm[1])
             Start_Lat = GPS.Latitude
-            Start_Long = GPS.Lonitude
+            Start_Long = GPS.Longitude
             Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
         except ValueError :
             Distance = 0
@@ -108,7 +110,7 @@ def Execute(command) :
             Distance = int(parm[1])
             heading_direction = GPS.Direction
             Start_Lat = GPS.Latitude
-            Start_Long = GPS.Lonitude
+            Start_Long = GPS.Longitude
             Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
         except ValueError :
             Distance = 0
