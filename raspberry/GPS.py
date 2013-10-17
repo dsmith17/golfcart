@@ -147,6 +147,7 @@ def _set_speed(val) :
         try :
             new_speed = float(val)
         except ValueError :
+            new_speed = old_Speed
             writeLog(LOG_ERROR, 'Got a bad float conversion')
 
         if new_speed > SPEED_THRESH :

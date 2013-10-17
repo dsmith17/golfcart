@@ -81,16 +81,24 @@ def Execute(command) :
             Turn_To_Angle = 0
             Command_Running = False
             writeLog(LOG_ERROR, "Command turnto failed... Conversion fail");
-    elif parm[0] == 'turndelta' : # formats a turnto string and calls execute again
+    #A turndelta command can not be called as the first command or after a delay
+    #as the GPS.Direction has to be set before the commands execute stage.
+    #Formats turndelta parmaters into a turnto call and calls execute again
+    elif parm[0] == 'turndelta' :
         try :
             turn_direction = ''
             Turn_Delta_Angle = int(parm[1])
             delta_heading = GPS.Direction + Turn_Delta_Angle
+            delta_heading = int(delta_heading)
+            if delta_heading < 0 :
+                delta_heading = 360 + delta_heading
+            if delta_heading > 360 :
+                delta_heading = delta_heading - 360
             if Turn_Delta_Angle > 0 :
                 turn_direction = 'right'
             elif Turn_Delta_Angle < 0 :
                 turn_direction = 'left'
-            commands.Execute('turnto,'+turn_direction+','+str(delta_heading)+';')           
+            Execute('turnto,'+str(delta_heading)+','+turn_direction+';')           
         except ValueError :
             Turn_Delta_Angle = 0
             Command_Running = False
@@ -108,7 +116,9 @@ def Execute(command) :
     elif parm[0] == 'heading' :
         try :
             Distance = int(parm[1])
-            heading_direction = GPS.Direction
+            if GPS.Direction != 0 :
+                have_direction = True
+                heading_direction = GPS.Direction
             Start_Lat = GPS.Latitude
             Start_Long = GPS.Longitude
             Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
@@ -174,29 +184,18 @@ def Check() :
         else :
             if GPS.Direction != 0 :
                 have_direction = True
-        '''cur_dir = GPS.Direction
-        if Turn_To_Direction == 'right' :
-            if _last_direction < cur_dir : # ignore the angle change of going from 360 to 0
-                if cur_dir >= Turn_To_Angle :
-                    Arduino._serial_cmd(Arudino._Commands["steer"], 0)
-                    if turn_active :
-                        Arduino._serial_cmd(Arduino._Commands["speed"], 0)
-                        turn_active = False
-                    Command_Running = False
-        if Turn_To_Direction == 'left' :
-            if _last_direction > cur_dir :
-                if cur_dir <= Turn_To_Angle :
-                    if turn_active :
-                        Arduino._serial_cmd(Arduino._Commands["speed"], 0)
-                        turn_active = False
-                    Arduino._serial_cmd(Arudino._Commands["steer"], 0)                    
-                    Command_Running = False'''
     elif Current_Command == 'forward' :
         distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
         if distance > Distance :
             Command_Running = False
             Arduino._serial_cmd(Arduino._Commands["speed"], 0)
     elif Current_Command == 'heading' :
+        if not have_direction :
+            if GPS.Direction != 0 :
+                have_direction = True
+                heading_direction = GPS.Direction
+            else :
+                return 
         distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
         cur_dir = GPS.Direction
         if distance > Distance :
