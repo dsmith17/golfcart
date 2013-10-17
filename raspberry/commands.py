@@ -140,7 +140,7 @@ def Check() :
     global Distance
     global Command_Running, Current_Command, Command_Start
     global Delay_Time
-    global Turn_Delta_Angle, delta_angle_current
+    global Turn_Delta_Angle, delta_angle_current, turn_active
     global Turn_To_Angle, Turn_To_Direction, have_direction
     global HEADING_DELTA, heading_direction, adjusting_heading
 
@@ -165,7 +165,7 @@ def Check() :
     elif Current_Command == 'turnto' :
         cur_dir = GPS.Direction
         if have_direction == True :
-            if Turn_To_Direction - Turn_Delta_Angle < cur_dir and cur_dir < Turn_To_Direction + Turn_Delta_Angle :
+            if Turn_To_Angle - HEADING_DELTA < cur_dir and cur_dir < Turn_To_Angle + HEADING_DELTA :
                 Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                 if turn_active :
                     Arduion._serial_cmd(Arduino._Commands["speed"], 0)
