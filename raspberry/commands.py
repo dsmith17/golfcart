@@ -168,7 +168,7 @@ def Check() :
             if Turn_To_Angle - HEADING_DELTA < cur_dir and cur_dir < Turn_To_Angle + HEADING_DELTA :
                 Arduino._serial_cmd(Arduino._Commands["steer"], 0)
                 if turn_active :
-                    Arduion._serial_cmd(Arduino._Commands["speed"], 0)
+                    Arduino._serial_cmd(Arduino._Commands["speed"], 0)
                     turn_active = False
                 Command_Running = False
         else :

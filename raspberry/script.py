@@ -43,7 +43,7 @@ def Check() :
         return
 
     # if there are still more commands to execute
-    if command_num -1 < len(Script_File) :
+    if command_num < len(Script_File) :
         command = Script_File[command_num]
         commands.Execute(command)
         command_num = 1 + command_num
