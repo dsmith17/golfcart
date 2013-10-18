@@ -22,8 +22,9 @@ Latitude = 0.0
 Longitude = 0.0
 old_Latitude = 0.0
 old_Longitude = 0.0
-Direction = 0.0
-old_Direction = 0.0
+invalid_Direction = -1000
+Direction = invalid_Direction
+old_Direction = invalid_Direction
 Speed = 0.0
 old_Speed = 0.0
 Time = 0.0
@@ -166,6 +167,8 @@ def _set_dir(val) :
             writeLog(LOG_ERROR, 'Got a bad float conversion')
             new_dir = Direction
         if Speed > SPEED_THRESH :
+            if Direction == invalid_Direction :
+                Direction = new_dir
             if new_dir != Direction :
                 old_Direction = Direction
                 Direction = (1-DIREC_CONST) * old_Direction + DIREC_CONST * new_dir

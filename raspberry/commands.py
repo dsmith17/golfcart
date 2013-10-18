@@ -57,12 +57,18 @@ def Execute(command) :
         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
         Arduino._serial_cmd(Arduino._Commands["brake"], 1)
         Delay_Time = 10
-    elif parm[0] == 'turnto' :
+    #A turnto command can not be called as the first command or after a delay
+    #as the GPS.Direction has to be set before the commands execute stage.
+    elif parm[0] == 'turnto' : #format "turnto,compass_heading,turning_left_or_right;"
         try :
+            if GPS.Direction == GPS.invalid_Direction :
+                writeLog(LOG_ERROR, "Command turnto failed... must have a valid direction")
+                Command_Running = False
+                return
             Turn_To_Angle = int(parm[1])
             if parm[2] == 'right' :
                 writeLog(LOG_DETAILS, "Turning Right")
-                Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
+                Arduino._serial_cmd(Arduino._Commands["steer"], _degrees)
             elif parm[2] == 'left' :
                 writeLog(LOG_DETAILS, "Turning Left")
                 Arduino._serial_cmd(Arduino._Commands["steer"], -_degrees)
@@ -86,6 +92,10 @@ def Execute(command) :
     #Formats turndelta parmaters into a turnto call and calls execute again
     elif parm[0] == 'turndelta' :
         try :
+            if GPS.Direction == GPS.invalid_Direction :
+                writeLog(LOG_ERROR, "Command turndelta failed... must have a valid direction")
+                Command_Running = False
+                return
             turn_direction = ''
             Turn_Delta_Angle = int(parm[1])
             delta_heading = GPS.Direction + Turn_Delta_Angle
@@ -116,7 +126,7 @@ def Execute(command) :
     elif parm[0] == 'heading' :
         try :
             Distance = int(parm[1])
-            if GPS.Direction != 0 :
+            if GPS.Direction != GPS.invalid_Direction :
                 have_direction = True
                 heading_direction = GPS.Direction
             Start_Lat = GPS.Latitude
@@ -182,7 +192,7 @@ def Check() :
                     turn_active = False
                 Command_Running = False
         else :
-            if GPS.Direction != 0 :
+            if GPS.Direction != GPS.invalid_Direction :
                 have_direction = True
     elif Current_Command == 'forward' :
         distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
@@ -191,7 +201,7 @@ def Check() :
             Arduino._serial_cmd(Arduino._Commands["speed"], 0)
     elif Current_Command == 'heading' :
         if not have_direction :
-            if GPS.Direction != 0 :
+            if GPS.Direction != GPS.invalid_Direction :
                 have_direction = True
                 heading_direction = GPS.Direction
             else :
@@ -201,15 +211,16 @@ def Check() :
         if distance > Distance :
             Command_Running = False
             Arduino._serial_cmd(Arduino._Commands["speed"], 0)
-            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
+            Arduino._serial_cmd(Arduino._Commands["steer"], 0)
         if cur_dir - heading_direction > HEADING_DELTA and not adjusting_heading : # veering right
-            Arduino._serial_cmd(Arudino._Commands["steer"], -_degrees)
+            Arduino._serial_cmd(Arduino._Commands["steer"], -_degrees)
             adjusting_heading = True
         elif -cur_dir + heading_direction > HEADING_DELTA and not adjusting_heading: # veering left
-            Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
+            Arduino._serial_cmd(Arduino._Commands["steer"], _degrees)
             adjusting_heading = True
-        elif -cur_dir + heading_direction < HEADING_DELTA and cur_dir - heading_direction < HEADING_DELTA : # assumes check() is often enough to stop turn before veering opposite way
-            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
+        # assumes check() is often enough to stop turn before veering opposite way
+        elif -cur_dir + heading_direction < HEADING_DELTA and cur_dir - heading_direction < HEADING_DELTA : 
+            Arduino._serial_cmd(Arduino._Commands["steer"], 0)
             adjusting_heading = False
     elif Current_Command == 'course' :
         distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
