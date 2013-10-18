@@ -34,7 +34,7 @@ Bearing = 0.0
 LONG_CONST = 0.5
 LAT_CONST = 0.5
 SPEED_CONST = 0.5
-SPEED_THRESH = 0.5
+SPEED_THRESH = 1
 DIREC_CONST = 0.5
 
 #calculates the distance between two gps coordinates returns ft

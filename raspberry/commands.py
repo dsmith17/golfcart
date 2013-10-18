@@ -21,7 +21,7 @@ Turn_To_Angle = 0
 Turn_To_Direction = ''
 have_direction = False
 
-HEADING_DELTA = 5
+HEADING_DELTA = 3
 heading_direction = 0
 adjusting_heading = False
 
