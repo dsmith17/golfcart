@@ -52,4 +52,5 @@ def Check() :
     elif len(Script_File) == command_num - 1 :
         command_num = 0
         Script_Running = False
+        writeLog(LOG_DETAILS,"Ending script")
         return

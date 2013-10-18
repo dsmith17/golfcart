@@ -4,6 +4,9 @@ include "interface.php";
 
 session_start();
 
+//print_array($_SESSION);
+//print_array($_POST);
+
 if(isset($_SESSION['writes']))
 {
 }
@@ -60,57 +63,59 @@ function getParms()
     flock($file, LOCK_UN);
     fclose($file);
 }
-
+//echo "right before the isset if statement<br>\n";
+// echo "post clickme is: " . $_POST['clickme']."<br>\n";
 if (isset($_POST['clickme']))
 {
-    interface_header();
-    getParms();
-    writeLog($_POST['clickme'] . "\n");
-	switch($_POST['clickme'])
-	{
-		case "left":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-            writeFile($_SESSION['writes'] . " left");
-		break;
-		case "right":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-            writeFile($_SESSION['writes'] . " right");
-		break;
-		case "up":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-            writeFile($_SESSION['writes'] . " up");
-		break;
-		case "down":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-            writeFile($_SESSION['writes'] . " down");
-		break;
-		case "stop":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-			writeFile($_SESSION['writes'] . " stop");
-        break;
-        case "reset":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-            writeFile($_SESSION['writes'] . " reset");
-        break;
-        case "change_direction":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-            writeFile($_SESSION['writes'] . " change_direction");
-        break;
-        case "upload":
-// 			echo "uploaded a file";
-// 			print_array($_FILES);
-			if(isset($_FILES) && $_FILES['THE_SCRIPT']['name'] != "" )
-			{
-				get_file($_FILES['THE_SCRIPT']['name']);
-			}
-		break;
-        case "script":
-            $_SESSION['writes'] = $_SESSION['writes'] + 1;
-            writeFile($_SESSION['writes'] . " script");		
-		break;
+     interface_header();
+     getParms();
+     writeLog($_POST['clickme'] . "\n");
+     switch($_POST['clickme'])
+     {
+          case "left":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " left");
+          break;
+          case "right":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " right");
+          break;
+          case "up":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " up");
+          break;
+          case "down":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " down");
+          break;
+          case "stop":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " stop");
+          break;
+          case "reset":
+               //echo "resetting<br>\n";
+               $_SESSION['writes'] = 0;
+               writeFile($_SESSION['writes'] . " reset");
+          break;
+          case "change_direction":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " change_direction");
+          break;
+          case "upload":
+     // 			echo "uploaded a file";
+     // 			print_array($_FILES);
+               if(isset($_FILES) && $_FILES['THE_SCRIPT']['name'] != "" )
+               {
+                    get_file($_FILES['THE_SCRIPT']['name']);
+               }
+          break;
+          case "script":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " script");		
+          break;
 
-		default:
-    }
+          default:
+     }
     interface_controls();
 }
 else

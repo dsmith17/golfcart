@@ -48,10 +48,100 @@ function interface_header()
      text-align: center;
 }
 
+input.up
+{
+     background:url(imgs/arrows-up.png) no-repeat;
+     width:    154px;
+     height:   201px;
+     border:   none;
+     cursor:   pointer;
+     display:  block;
+     text-indent:   -3000px;
+}
+
+input.down
+{
+     background:url(imgs/arrows-down.png) no-repeat;
+     width:    154px;
+     height:   201px;
+     border:   none;
+     cursor:   pointer;
+     display:  block;
+     text-indent:   -3000px;
+}
+
+input.stop
+{
+     background:url(imgs/Stop_square_scaled.png) no-repeat;
+     width:    150px;
+     height:   71px;
+     border:   none;
+     cursor:   pointer;
+/*      display:  block; */
+     text-indent:   -3000px;
+}
+
+input.reset
+{
+     background:url(imgs/Reset_square_scaled.png) no-repeat;
+     width:    150px;
+     height:   71px;
+     border:   none;
+     cursor:   pointer;
+/*      display:  block; */
+     text-indent:   -3000px;
+}
+
+input.refresh
+{
+     background:url(imgs/Refresh_square_scaled.png) no-repeat;
+     width:    150px;
+     height:   71px;
+     border:   none;
+     cursor:   pointer;
+/*      display:  block; */
+     text-indent:   -3000px;
+}
+
+input.changedirection
+{
+     background:url(imgs/ChangeDirections_square_scaled.png) no-repeat;
+     width:    150px;
+     height:   71px;
+     border:   none;
+     cursor:   pointer;
+     display:  block;
+     text-indent:   -3000px;
+}
+
+input.left
+{
+     background:url(imgs/arrows-left.png) no-repeat;
+     width:    200px;
+     height:   154px;
+     border:   none;
+     cursor:   pointer;
+     display:  block;
+     text-indent:   -3000px;
+}
+
+input.right
+{
+     background:url(imgs/arrows-right.png) no-repeat;
+     width:    200px;
+     height:   154px;
+     border:   none;
+     cursor:   pointer;
+     display:  block;
+     text-indent:   -3000px;
+}
+
+
+
+
 </style>
 </head>
 <body>
-
 
 <form name="controls1" enctype="multipart/form-data" method="POST" action="index.php">
 <?php
@@ -65,21 +155,24 @@ function interface_controls()
 <div class="table">
      <div class="rowGroup">
           <div class="row">
-               <div class="cellpad"><input type="image" src="imgs/arrows-up.png" alt="submit" name="clickme" value="up"><br>
-                    <input type="image" src="imgs/arrows-down.png" alt="submit" name="clickme" value="down"></div>
                <div class="cellpad">
-                    <input type="image" src="imgs/Stop_square_scaled.png" alt="submit" name="clickme" value="stop"><br>
+                    <input class="up" type="submit" name="clickme" value="up"><br>
+                    <input class="down" type="submit" name="clickme" value="down">
+               </div>
+               <div class="cellpad">
+                    <input class="stop" type="submit" name="clickme" value="stop"><br>
                     <div class="wrapper">
-                         <input type="image" src="imgs/Reset_square_scaled.png" alt="submit" name="clickme" value="reset"><br>
-                         <input type="image" src="imgs/Refresh_square_scaled.png" alt="submit" name="clickme" value="reload"><br>
-                         <input type="image" src="imgs/ChangeDirections_square_scaled.png" alt="submit" name="clickme" value="change_direction">
+                         <input class="reset" type="submit" name="clickme" value="reset"><br>
+                         <input class="refresh" type="submit" name="clickme" value="reload"><br>
+                         <input class="changedirection" type="submit" name="clickme" value="change_direction">
                     </div>
                </div>
                <div class="cellpad">
-                         <input type="image" src="imgs/arrows-left.png" alt="submit" name="clickme" value="left">
+                         <input class="left" type="submit" name="clickme" value="left">
                </div>
                <div class="cellpad">
-                    <input class="cellcenter" type="image" src="imgs/arrows-right.png" alt="submit" name="clickme" value="right">
+<!--                     <input class="cellcenter" type="image" src="imgs/arrows-right.png" alt="submit" name="clickme" value="right"> -->
+                         <input class="right" type="submit" name="clickme" value="right">
                </div>
           </div><!-- end of the row -->
      </div><!-- end of rowGroup -->
