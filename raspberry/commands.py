@@ -25,6 +25,15 @@ HEADING_DELTA = 3
 heading_direction = 0
 adjusting_heading = False
 
+SPEED_DELTA = 0.1
+SPEED_UNIT = 50
+SPEED_TERMINATE = -1000
+Speed_Setting = 0
+accel_setting = 1700
+_adjust_speed = False
+
+_course_set = False
+
 _Commands = { 'sstop', 'hstop', 'forward', 'turnto', 'turndelta', 'heading' }
 
 def Execute(command) :
@@ -36,6 +45,8 @@ def Execute(command) :
     global Turn_To_Angle, Turn_To_Direction
     global have_direction
     global heading_direction
+    global Speed_Setting, accel_setting, SPEED_TERMINATE, _adjust_speed
+    global _course_set
 
     command = command.strip();
     command = command.rstrip(';')
@@ -78,7 +89,7 @@ def Execute(command) :
                 Command_Running = False
                 return
             if Arduino.Speed == 0 :
-                Arduino._serial_cmd(Arduino._Commands["speed"], 1700)
+                Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting)
                 turn_active = True
             if GPS.Direction != 0 :
                 have_direction = True
@@ -118,7 +129,7 @@ def Execute(command) :
             Distance = int(parm[1])
             Start_Lat = GPS.Latitude
             Start_Long = GPS.Longitude
-            Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
+            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting) #starts the golf cart moving
         except ValueError :
             Distance = 0
             Command_Running = False
@@ -131,25 +142,39 @@ def Execute(command) :
                 heading_direction = GPS.Direction
             Start_Lat = GPS.Latitude
             Start_Long = GPS.Longitude
-            Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
+            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting) #starts the golf cart moving
         except ValueError :
             Distance = 0
             Command_Running = False
-            logWrite(LOG_ERROR, "Command heading failed... Conversion fail")
+            writeLog(LOG_ERROR, "Command heading failed... Conversion fail")
     elif parm[0] == 'course' :
         try :
             Distance = int(parm[1])
             heading_direction = int(parm[2])
             if heading_direction > 360 or heading_direction < 0 :
-                logWrite(LOG_ERROR, "Command course failed... direction not between 0 and 360")
+                writeLog(LOG_ERROR, "Command course failed... direction not between 0 and 360")
                 return
-            Start_Lat = GPS.Latitude
-            Start_Long = GPS.Lonitude
-            Arduino._serial_cmd(Arduino._Commands["speed"], 1700) #starts the golf cart moving
+            _course_set = True
+            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting) #starts the golf cart moving
         except ValueError :
             Distance = 0
             Command_Running = False
+            _course_set = False
             logWrite(LOG_ERROR, "Command course failed... Conversion fail")
+    elif parm[0] == 'speed' :
+        try :
+            Speed_Setting = float(parm[1])
+            if Speed_Setting = SPEED_TERMINATE : #terminate control speed command
+                _adjust_speed = False
+                accel_setting = 1700
+                Speed_Setting = 0
+                return
+            _adjust_speed = True
+            writeLog(LOG_DETAILS, "Set Speed to : " + repr(Speed_Setting))
+        except:
+            Speed_Setting = 0
+            _adjust_speed = False
+            writeLog(LOG_ERROR, "Command speed failed... Conversion fail")
     elif parm[0] == 'delay' :
         Delay_Time = int(parm[1])
     else :
@@ -163,9 +188,45 @@ def Check() :
     global Turn_Delta_Angle, delta_angle_current, turn_active
     global Turn_To_Angle, Turn_To_Direction, have_direction
     global HEADING_DELTA, heading_direction, adjusting_heading
+    global Speed_Setting, accel_setting, SPEED_DELTA, SPEED_UNIT, _adjust_speed
+    global _course_set
+
+    if _course_set :
+        cur_dir = GPS.Direction
+        turn_direction = ''
+        if cur_dir == GPS.invalid_Direction : # wait for valid direction
+            return
+        if cur_dir + HEADING_DELTA < heading_direction or cur_dir - HEADING_DELTA > heading_direction :
+            # Find the direction the golf cart should turnto ( 360 - 0 condition checking )
+            if cur_dir + HEADING_DELTA < heading_direction and heading_direction - cur_dir < 180 :
+                turn_direction = 'right'
+            elif cur_dir + HEADING_DELTA < heading_direction and heading_direction - cur_dir > 180 :
+                turn_direction = 'left'
+            elif cur_dir - HEADING_DELTA > heading_direction and cur_dir - heading_direction < 180 :
+                turn_direction = 'left'
+            elif cur_dir - HEADING_DELTA > heading_direction and cur_dir - heading_direction > 180 :
+                turn_direction = 'right'
+            writeLog(LOG_DETAILS, "Command course is executing a turnto," + str(heading_direction) + "," + turn_direction + ";")
+            Execute('turnto,'+str(heading_direction)+','+turn_direction+';')
+            return
+        else :
+            _course_set = False
+            writeLog(LOG_DETAILS, "Command course is executing a heading," + str(Distance) + ";")
+            Execute('heading,'+str(Distance)+';')
+            return
 
     if not Command_Running :
         return
+
+    if _adjust_speed :
+        cur_speed = GPS.Speed
+        if cur_speed < Speed_Setting - SPEED_DELTA :
+            accel_setting = accel_setting + SPEED_UNIT
+            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting)
+        elif cur_speed > Speed_Setting + SPEED_DELTA :
+            accel_setting = accel_setting - SPEED_UNIT
+            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting)
+        writeLog(LOG_DETAILS, "Current Speed : " + repr(cur_speed) + " with an Accel value of : " + repr(accel_setting))
 
     if Current_Command == 'sstop' :
         if GPS.Connected and GPS.Speed == 0.0 :
@@ -223,21 +284,7 @@ def Check() :
             Arduino._serial_cmd(Arduino._Commands["steer"], 0)
             adjusting_heading = False
     elif Current_Command == 'course' :
-        distance = GPS.haversine(Start_Lat, Start_Long, GPS.Latitude, GPS.Longitude)
-        cur_dir = GPS.Direction
-        if distance > Distance :
-            Command_Running = False
-            Arduino._serial_cmd(Arduino._Commands["speed"], 0)
-            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
-        if cur_dir - heading_direction > HEADING_DELTA and not adjusting_heading : # veering right or need to turn left
-            Arduino._serial_cmd(Arudino._Commands["steer"], -_degrees)
-            adjusting_heading = True
-        elif -cur_dir + heading_direction > HEADING_DELTA and not adjusting_heading: # veering left or need to turn right
-            Arduino._serial_cmd(Arudino._Commands["steer"], _degrees)
-            adjusting_heading = True
-        elif -cur_dir + heading_direction < HEADING_DELTA and cur_dir - heading_direction < HEADING_DELTA : # assumes check() is often enough to stop turn before veering opposite way
-            Arduino._serial_cmd(Arudino._Commands["steer"], 0)
-            adjusting_heading = False
+        return
     elif Current_Command == 'delay' :
         if Command_Start + Delay_Time < time.time() :
             Command_Running = False
