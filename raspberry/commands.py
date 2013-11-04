@@ -31,6 +31,12 @@ SPEED_TERMINATE = -1000
 Speed_Setting = 0
 accel_setting = 1700
 _adjust_speed = False
+cur_time = time.time()
+prev_time = cur_time
+prev_error = 0
+PROPORTIONAL_GAIN = 1
+INTEGRAL_GAIN = 0
+DERIVATIVE_GAIN = 0
 
 _course_set = False
 
@@ -188,10 +194,10 @@ def Check() :
     global Turn_Delta_Angle, delta_angle_current, turn_active
     global Turn_To_Angle, Turn_To_Direction, have_direction
     global HEADING_DELTA, heading_direction, adjusting_heading
-    global Speed_Setting, accel_setting, SPEED_DELTA, SPEED_UNIT, _adjust_speed
+    global Speed_Setting, accel_setting, SPEED_DELTA, SPEED_UNIT, _adjust_speed, cur_time, prev_time, prev_error
     global _course_set
 
-    if _course_set :
+    if _course_set : # a course can be set without command_Running being true
         cur_dir = GPS.Direction
         turn_direction = ''
         if cur_dir == GPS.invalid_Direction : # wait for valid direction
@@ -220,12 +226,15 @@ def Check() :
 
     if _adjust_speed :
         cur_speed = GPS.Speed
-        if cur_speed < Speed_Setting - SPEED_DELTA :
-            accel_setting = accel_setting + SPEED_UNIT
-            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting)
-        elif cur_speed > Speed_Setting + SPEED_DELTA :
-            accel_setting = accel_setting - SPEED_UNIT
-            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting)
+        prev_time = cur_time
+        cur_time = time.time()
+        dt = cur_time - prev_time
+        error = Speed_Setting - cur_speed
+        integral = integral + error * dt
+        derivative = (error - prev_error) / dt
+        manipulated_value = PROPORTIONAL_GAIN * error + INTEGRAL_GAIN * integral + DERIVATIVE_GAIN * derivative
+        prev_error = error
+        Arduino._serial_cmd(Arduino._Commands["speed"], manipulated_value)
         writeLog(LOG_DETAILS, "Current Speed : " + repr(cur_speed) + " with an Accel value of : " + repr(accel_setting))
 
     if Current_Command == 'sstop' :
