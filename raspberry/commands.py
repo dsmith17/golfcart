@@ -176,6 +176,7 @@ def Execute(command) :
                 Speed_Setting = 0
                 return
             _adjust_speed = True
+            Arduino._serial_cmd(Arduino._Commands["speed"], Speed_Setting) #starts the golf cart moving
             writeLog(LOG_DETAILS, "Set Speed to : " + repr(Speed_Setting))
         except:
             Speed_Setting = 0
@@ -224,7 +225,7 @@ def Check() :
     if not Command_Running :
         return
 
-    if _adjust_speed :
+    '''if _adjust_speed :
         cur_speed = GPS.Speed
         prev_time = cur_time
         cur_time = time.time()
@@ -235,7 +236,7 @@ def Check() :
         manipulated_value = PROPORTIONAL_GAIN * error + INTEGRAL_GAIN * integral + DERIVATIVE_GAIN * derivative
         prev_error = error
         Arduino._serial_cmd(Arduino._Commands["speed"], manipulated_value)
-        writeLog(LOG_DETAILS, "Current Speed : " + repr(cur_speed) + " with an Accel value of : " + repr(accel_setting))
+        writeLog(LOG_DETAILS, "Current Speed : " + repr(cur_speed) + " with an Accel value of : " + repr(accel_setting))'''
 
     if Current_Command == 'sstop' :
         if GPS.Connected and GPS.Speed == 0.0 :
