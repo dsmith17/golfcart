@@ -7,7 +7,8 @@ import script
 import commands
 import subprocess
 
-url = 'http://157.182.184.52/~student1/command.php'
+#url = 'http://157.182.184.52/~student1/command.php'
+url = 'http://localhost/server/command.php'
 # GPS_Port = 'COM17'
 GPS_Port = '/dev/ttyUSB0'
 # Arduino_Port = 'COM6'

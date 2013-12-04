@@ -7,8 +7,10 @@ import GPS
 import Arduino
 import script
 
-_URL = 'http://157.182.184.52/~student1/command.php'
-_Script = 'http://157.182.184.52/~student1/data/script.txt'
+'''_URL = 'http://157.182.184.52/~student1/command.php'
+_Script = 'http://157.182.184.52/~student1/data/script.txt'''
+_URL = 'http://localhost/server/command.php'
+_Script = 'http://localhost/server/data/script.txt'
 _Pings = 0
 _TimeLastPing = 0
 _Sequence = 0

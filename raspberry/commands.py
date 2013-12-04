@@ -40,7 +40,7 @@ DERIVATIVE_GAIN = 0
 
 _course_set = False
 
-_Commands = { 'sstop', 'hstop', 'forward', 'turnto', 'turndelta', 'heading' }
+_Commands = { 'sstop', 'hstop', 'forward', 'turnto', 'turndelta', 'heading', 'speed', 'heading'}
 
 def Execute(command) :
     global Command_Running, Current_Command, Command_Start
@@ -143,9 +143,9 @@ def Execute(command) :
     elif parm[0] == 'heading' :
         try :
             Distance = int(parm[1])
-            if GPS.Direction != GPS.invalid_Direction :
+            '''if GPS.Direction != GPS.invalid_Direction :
                 have_direction = True
-                heading_direction = GPS.Direction
+                heading_direction = GPS.Direction'''
             Start_Lat = GPS.Latitude
             Start_Long = GPS.Longitude
             Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting) #starts the golf cart moving
@@ -170,13 +170,14 @@ def Execute(command) :
     elif parm[0] == 'speed' :
         try :
             Speed_Setting = float(parm[1])
-            if Speed_Setting = SPEED_TERMINATE : #terminate control speed command
+            if Speed_Setting == SPEED_TERMINATE : #terminate control speed command
                 _adjust_speed = False
                 accel_setting = 1700
                 Speed_Setting = 0
                 return
             _adjust_speed = True
-            Arduino._serial_cmd(Arduino._Commands["speed"], Speed_Setting) #starts the golf cart moving
+            #Arduino._serial_cmd(Arduino._Commands["speed"], Speed_Setting) #starts the golf cart moving
+            accel_setting = Speed_Setting
             writeLog(LOG_DETAILS, "Set Speed to : " + repr(Speed_Setting))
         except:
             Speed_Setting = 0
