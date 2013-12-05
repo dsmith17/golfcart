@@ -4,7 +4,7 @@ import serial #Has to be installed from pyserial.sourceforge.net/
 from log import *
 
 _Commands = {"steer": "4", "speed" : "5", "brake" : "6",
-            "dir" : "7", "steer mode" : "8"}
+            "dir" : "7", "steer_mode" : "8"}
 _ARDUINO_STATUS = 9
 Connected = False
 
@@ -15,7 +15,7 @@ Steer = 0
 Steer_current = 0
 Direction = 0
 Brake = 0
-Steer_Mode = 0 
+steer_mode = 1 
 Steer_Step = 45
 Speed_Step = 300
 Speed_First = 1200
@@ -117,6 +117,7 @@ def _cmd_reset() :
 def Execute(command) :
     global Steer
     global Steer_Step
+    global steer_mode
     global Speed
     global Speed_Step
     global Speed_First
@@ -159,8 +160,12 @@ def Execute(command) :
         Speed = 0
         _serial_cmd(_Commands["speed"], Speed)
         _serial_cmd(_Commands["dir"], Direction)
-    elif command[1] == 'steer mode' :
-        _serial_cmd(_Commands["steer mode"], command[2])
+    elif command[1] == 'steer_mode' :
+        if steer_mode == 0 :
+            steer_mode = 1
+        else :
+            steer_mode = 0
+        _serial_cmd(_Commands["steer_mode"], steer_mode)
     else :
         writeLog(LOG_ERROR, 'Unknown command: ' + str(command))
     

@@ -70,9 +70,10 @@ def Execute(command) :
     if parm[0] == 'sstop' :
         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
         Delay_Time = 5
+    # hstop with arg of 1 applys brake, 0 release brakes
     elif parm[0] == 'hstop' :
         Arduino._serial_cmd(Arduino._Commands["speed"], 0)
-        Arduino._serial_cmd(Arduino._Commands["brake"], 1)
+        Arduino._serial_cmd(Arduino._Commands["brake"], parm[1])
         Delay_Time = 10
     #A turnto command can not be called as the first command or after a delay
     #as the GPS.Direction has to be set before the commands execute stage.

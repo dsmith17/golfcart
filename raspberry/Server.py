@@ -44,10 +44,10 @@ def _formatUrl():
     else :
         formattedUrl += '&brake=OFF'
 
-    if Arduino.Steer_Mode :
-        formattedUrl += '&steermode=ACTIVE'
-    else :
+    if Arduino.steer_mode :
         formattedUrl += '&steermode=PASSIVE'
+    else :
+        formattedUrl += '&steermode=ACTIVE'
 
     if GPS.Connected :
         formattedUrl += '&lat=' + str(GPS.Latitude)

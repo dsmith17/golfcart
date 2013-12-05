@@ -101,6 +101,10 @@ if (isset($_POST['clickme']))
                $_SESSION['writes'] = $_SESSION['writes'] + 1;
                writeFile($_SESSION['writes'] . " change_direction");
           break;
+          case "steer_mode":
+               $_SESSION['writes'] = $_SESSION['writes'] + 1;
+               writeFile($_SESSION['writes'] . " steer_mode");
+          break;
           case "upload":
      // 			echo "uploaded a file";
      // 			print_array($_FILES);

@@ -192,6 +192,11 @@ function interface_controls()
 				<input type="submit" name="clickme" value="upload" >
 			</div>
 		</div><!-- end row -->
+		<div class="row">
+			<div class="cellpad">
+				<input type="submit" name="clickme" value="steer_mode">
+			</div>			
+		</div>
 	</div><!-- end of rowGroup -->
 </div>   
 </form>
