@@ -35,7 +35,7 @@ LONG_CONST = 0.5
 LAT_CONST = 0.5
 SPEED_CONST = 0.5
 SPEED_THRESH = 1
-DIREC_CONST = 0.5
+DIREC_CONST = 0.4
 
 #calculates the distance between two gps coordinates returns ft
 def haversine(lat1, lon1, lat2, lon2):

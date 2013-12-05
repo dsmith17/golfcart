@@ -85,10 +85,10 @@ def Execute(command) :
             Turn_To_Angle = int(parm[1])
             if parm[2] == 'right' :
                 writeLog(LOG_DETAILS, "Turning Right")
-                Arduino._serial_cmd(Arduino._Commands["steer"], _degrees)
+                Arduino._serial_cmd(Arduino._Commands["steer"], _degrees*1.825)
             elif parm[2] == 'left' :
                 writeLog(LOG_DETAILS, "Turning Left")
-                Arduino._serial_cmd(Arduino._Commands["steer"], -_degrees)
+                Arduino._serial_cmd(Arduino._Commands["steer"], -_degrees*1.825)
             else :
                 writeLog(LOG_ERROR, "Unknown turnto Direction... Skipping");
                 Turn_To_Angle = 0
@@ -99,7 +99,8 @@ def Execute(command) :
                 turn_active = True
             if GPS.Direction != 0 :
                 have_direction = True
-            Turn_To_Direction = parm[2]            
+            Turn_To_Direction = parm[2]
+            Arduino._serial_cmd(Arduino._Commands["speed"], accel_setting)
         except ValueError :
             Turn_To_Angle = 0
             Command_Running = False
